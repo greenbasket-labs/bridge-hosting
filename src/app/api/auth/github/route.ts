@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server'; import crypto from 'node:crypto'; import {githubAuthorizeUrl} from '@/lib/github';
+export async function GET(){if(!process.env.GITHUB_CLIENT_ID)return NextResponse.json({error:'GitHub OAuth is not configured'},{status:503});const state=crypto.randomBytes(24).toString('hex');const r=NextResponse.redirect(githubAuthorizeUrl(state));r.cookies.set('github_oauth_state',state,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',path:'/',maxAge:600});return r;}
