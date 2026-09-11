@@ -1,0 +1,3 @@
+-- Bridge initial migration is intentionally generated from prisma/schema.prisma during the first deployment.
+-- For a fresh production database use: npx prisma migrate dev --name init
+-- Then commit the generated migration directory before production deployment.
