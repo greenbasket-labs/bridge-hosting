@@ -3,7 +3,7 @@ services:
     name: bridge-hosting
     runtime: node
     plan: starter
-    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    buildCommand: npm ci && npx prisma generate && npx prisma db push && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
