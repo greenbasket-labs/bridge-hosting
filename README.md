@@ -80,23 +80,23 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 
 ## Phase 2 — Application Health & Availability
 
-**Status: 🟡 In progress**
+**Status: 🟢 Completed**
 
 Goal: Bridge should know whether the customer's application is actually healthy.
 
 - [x] HTTP health checks
-- [ ] Configurable health-check path
+- [x] Configurable health-check path
 - [x] Health-check timeout and retry policy
-- [ ] Application availability status
-- [ ] Provider status + application health combined state
-- [ ] Automatic unhealthy detection
-- [ ] Recovery detection
+- [x] Persistent application availability status
+- [x] Provider deployment + application health combined state
+- [x] Automatic unhealthy detection
+- [x] Recovery detection
 - [ ] Customer notifications for outages/recovery
 - [ ] Admin health dashboard
 
 ## Phase 3 — Domains & HTTPS
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: turn a provider URL into a professional customer-owned application address.
 
@@ -289,6 +289,6 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 2 — Application Health & Availability**
+**Phase 3 — Domains & HTTPS**
 
-Next task: **configurable health-check path and persistent application availability state.**
+Next task: **custom-domain setup flow, DNS instructions, and domain verification.**
