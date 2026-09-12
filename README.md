@@ -71,8 +71,8 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 - [x] Roll back to the previous successful commit
 - [x] Add real application health checks
 - [x] Make deployment success depend on health verification
-- [ ] Prevent stale/older deployments from replacing newer commits
-- [ ] Coalesce superseded deployments
+- [x] Prevent stale/older deployments from replacing newer commits
+- [x] Coalesce superseded deployments
 - [x] Add deployment timeout handling
 - [ ] Add deployment retry policy
 - [ ] Add deployment cancellation
@@ -291,4 +291,4 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 1 — Reliable Deployment Engine**
 
-Next task: **prevent stale deployments from replacing newer commits, then complete deployment retry/cancellation and customer-facing deployment states.**
+Next task: **deployment retry policy, cancellation, and better customer-facing deployment states/logs.**
