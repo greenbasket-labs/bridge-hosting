@@ -165,11 +165,14 @@ Customer backup controls now expose the existing safe operations on the applicat
 
 ## Phase 6 — Billing & Plans
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: connect Bridge plans to real customer billing and resource economics.
 
-- [ ] Production payment provider integration
+- [x] Billing transaction persistence
+- [x] Paystack payment initialization
+- [x] Paystack payment verification
+- [ ] Production payment provider integration hardening
 - [ ] Subscription lifecycle
 - [ ] Payment webhooks
 - [ ] Failed-payment handling
@@ -181,6 +184,8 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [ ] Invoice/receipt history
 - [ ] Usage-to-plan enforcement
 - [ ] Billing notifications
+
+The first billing slice persists each payment reference, initializes a server-side Paystack checkout, and verifies the amount, currency, and reference before activating the application's subscription period. Recurring billing and webhooks remain intentionally separate follow-up work.
 
 ## Phase 7 — Customer Experience
 
@@ -303,6 +308,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 6 — Billing & Plans**
 
-Phase 5 is complete: **automated daily backups, plan-based retention, provider integrity verification, safe Render PITR recovery initiation, recovery readiness verification, auditable recovery history, and customer backup controls.**
+Completed: **billing transaction persistence plus secure Paystack checkout initialization and server-side payment verification.**
 
-Next task: **production billing foundation — connect plans/subscriptions to a real payment provider without building a full billing system at once.**
+Next task: **payment webhook handling — make successful/failed payment state reliable even when the customer does not return to Bridge.**
