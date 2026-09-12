@@ -153,7 +153,7 @@ Goal: protect customer applications and make recovery practical.
 - [x] Automated backup scheduling
 - [x] Backup retention enforcement
 - [ ] Backup storage abstraction
-- [ ] Backup integrity checks
+- [x] Backup integrity checks
 - [ ] Restore workflow
 - [ ] Restore verification
 - [ ] Recovery history
@@ -161,7 +161,9 @@ Goal: protect customer applications and make recovery practical.
 
 Automated backups run once per day for live applications whose plan has `backupRetentionDays > 0` and whose database resource is configured. The job skips applications that already have a backup from the previous 24 hours, uses the selected provider's backup capability, and records scheduled backup success/failure in Bridge's audit log.
 
-Bridge retention enforcement marks completed or still-pending backup records older than the plan's `backupRetentionDays` as `EXPIRED` and hides them from the customer backup list. This is a **Bridge metadata/visibility retention policy**, not provider-side deletion: Render's logical Postgres exports are retained by Render for seven days, and the current Render API exposes create/list export operations but no export-delete operation. citeturn0search3turn0search4
+Bridge retention enforcement marks completed or still-pending backup records older than the plan's `backupRetentionDays` as `EXPIRED` and hides them from the customer backup list. This is a **Bridge metadata/visibility retention policy**, not provider-side deletion: Render's logical Postgres exports are retained by Render for seven days, and the current Render API exposes create/list export operations but no export-delete operation.
+
+Completed backups are now integrity-checked through the provider's backup-status capability when available. A provider record that cannot be found or is not completed causes the Bridge backup to be marked `FAILED` and is written to the audit log. Newly completed manual and scheduled backups are verified before Bridge records them as usable. citeturn0search2turn0search7
 
 Render backup operations require a **Postgres resource ID** and remain separate from the web-service resource ID.
 
@@ -305,6 +307,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **automated daily backups plus plan-based Bridge retention enforcement with explicit `EXPIRED` state and audit logging.**
+Completed: **automated daily backups, plan-based retention enforcement, and provider-backed integrity verification.**
 
-Next task: **add the smallest useful backup integrity check.**
+Next task: **build the smallest useful restore workflow, starting with a safe Render PITR/recovery operation rather than pretending logical exports support in-place restore.**
