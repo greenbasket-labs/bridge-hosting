@@ -69,11 +69,11 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 - [x] Scheduled reconciliation every 5 minutes
 - [x] Preserve last known live version when a newer deployment fails
 - [x] Roll back to the previous successful commit
-- [ ] Add real application health checks
-- [ ] Make deployment success depend on health verification
+- [x] Add real application health checks
+- [x] Make deployment success depend on health verification
 - [ ] Prevent stale/older deployments from replacing newer commits
 - [ ] Coalesce superseded deployments
-- [ ] Add deployment timeout handling
+- [x] Add deployment timeout handling
 - [ ] Add deployment retry policy
 - [ ] Add deployment cancellation
 - [ ] Improve deployment logs and customer-facing error messages
@@ -84,9 +84,9 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 
 Goal: Bridge should know whether the customer's application is actually healthy.
 
-- [ ] HTTP health checks
+- [x] HTTP health checks
 - [ ] Configurable health-check path
-- [ ] Health-check timeout and retry policy
+- [x] Health-check timeout and retry policy
 - [ ] Application availability status
 - [ ] Provider status + application health combined state
 - [ ] Automatic unhealthy detection
@@ -291,4 +291,4 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 1 — Reliable Deployment Engine**
 
-Next task: **real application health checks and health-gated deployment success.**
+Next task: **prevent stale deployments from replacing newer commits, then complete deployment retry/cancellation and customer-facing deployment states.**
