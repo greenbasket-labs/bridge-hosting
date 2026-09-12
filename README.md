@@ -100,26 +100,16 @@ Goal: Bridge should know whether the customer's application is actually healthy.
 
 Goal: turn a provider URL into a professional customer-owned application address.
 
-- [x] Custom-domain setup API
+- [x] Custom-domain setup flow
 - [x] DNS instructions
 - [x] DNS verification
-- [ ] Domain lifecycle reconciliation
-- [ ] SSL provisioning verification
-- [ ] HTTPS active state
-- [ ] Domain error handling
-- [x] Multiple domains per application data model
+- [x] Domain lifecycle reconciliation
+- [x] SSL provisioning verification
+- [x] HTTPS active state
+- [x] Domain error handling
+- [x] Multiple domains per application
 - [ ] Optional Bridge-managed domain registration
 - [ ] Domain renewal/lifecycle support
-
-### Domain flow implemented
-
-1. Customer submits a hostname for an application.
-2. Bridge validates ownership scope and prevents a hostname being attached to another customer's application.
-3. Bridge creates the domain in `DNS_PENDING` state.
-4. Bridge returns the required CNAME target and verification instructions.
-5. Customer triggers domain verification after DNS propagation.
-6. Bridge checks DNS and then asks the infrastructure provider to configure the hostname.
-7. Domain becomes `SSL_PENDING` or `ACTIVE` depending on provider SSL state.
 
 ## Phase 4 — Real Usage & Resource Control
 
@@ -301,4 +291,4 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 3 — Domains & HTTPS**
 
-Next task: **domain lifecycle reconciliation, provider SSL verification, and HTTPS active state.**
+Next task: **domain management UI and final domain lifecycle/renewal handling.**
