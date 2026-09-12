@@ -209,10 +209,10 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] Plan management — plan selection + checkout
 - [x] Backup management
 - [x] Notifications center
-- [ ] Customer support/contact flow
+- [x] Customer support/contact flow
 - [ ] Mobile-friendly experience
 
-The customer dashboard gives a single application list with human-readable status and plan information. Application pages expose recent deployment logs and a simple usage dashboard showing the latest collected CPU, RAM, storage, bandwidth, request, and concurrent-user measurements. A customer notifications page now exposes the latest 50 notifications already recorded by Bridge.
+The customer dashboard gives a single application list with human-readable status and plan information. Application pages expose recent deployment logs and a simple usage dashboard showing the latest collected CPU, RAM, storage, bandwidth, request, and concurrent-user measurements. A customer notifications page exposes the latest 50 notifications already recorded by Bridge. A simple support page provides a configured support email and guidance for reporting application or deployment issues, without introducing a ticketing system.
 
 ## Phase 8 — Admin & Operations
 
@@ -314,6 +314,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 7 — Customer Experience**
 
-Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, usage dashboard, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, backup management, and notifications center.**
+Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, usage dashboard, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, backup management, notifications center, and customer support/contact flow.**
 
-Next task: **customer support/contact flow — provide a simple way for customers to contact Bridge support without adding a full ticketing system.**
+Next task: **mobile-friendly experience — make the existing customer experience usable on smaller screens without redesigning the application.**
