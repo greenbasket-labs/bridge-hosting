@@ -316,7 +316,9 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 8 — Admin & Operations completed.**
 
-Operational alerts are now implemented. **Next task: Phase 9 security & production hardening, focused only on the launch-critical controls needed for Bridge V1.**
+Operational alerts are now implemented. Local smoke testing has confirmed that a new application can be created with a unique internal `.local.bridge` domain, deployed successfully through the local provider, marked `LIVE`, and display its deployment logs in the application UI.
+
+**Next task: verify GitHub push → Bridge webhook → automatic deployment locally, then continue Phase 9 security & production hardening focused only on the launch-critical controls needed for Bridge V1.**
 
 ## Bridge V1 finish line
 
