@@ -20,10 +20,12 @@ export async function POST(req:Request){
   const reference=`bridge-${crypto.randomUUID()}`;
   const tx=await db.billingTransaction.create({data:{customerId:user.customer.id,applicationId:app.id,planId:plan.id,reference,amountKobo:amount}});
   try{
-    const r=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({email:user.email,amount:amount.toString(),currency:'NGN',reference,callback_url:`${process.env.APP_URL||'http://localhost:3000'}/billing/callback`,metadata:{billingTransactionId:tx.id,applicationId:app.id,planId:plan.id}})});
+    const payload:any={email:user.email,amount:amount.toString(),currency:'NGN',reference,callback_url:`${process.env.APP_URL||'http://localhost:3000'}/billing/callback`,metadata:{billingTransactionId:tx.id,applicationId:app.id,planId:plan.id}};
+    if(plan.paystackPlanCode)payload.plan=plan.paystackPlanCode;
+    const r=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const x=await r.json();
     if(!r.ok||!x?.status||!x?.data?.authorization_url)throw new Error(x?.message||'Paystack payment initialization failed');
-    await db.auditLog.create({data:{userId:user.id,action:'BILLING_PAYMENT_INITIALIZED',entityType:'BillingTransaction',entityId:tx.id,metadata:{applicationId:app.id,planId:plan.id,reference,amountKobo:amount.toString()}}});
+    await db.auditLog.create({data:{userId:user.id,action:'BILLING_PAYMENT_INITIALIZED',entityType:'BillingTransaction',entityId:tx.id,metadata:{applicationId:app.id,planId:plan.id,reference,amountKobo:amount.toString(),recurring:Boolean(plan.paystackPlanCode)}}});
     return NextResponse.json({authorizationUrl:x.data.authorization_url,reference});
   }catch(e){
     const message=e instanceof Error?e.message:'Payment initialization failed';
