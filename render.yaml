@@ -27,9 +27,23 @@ services:
   - type: cron
     name: bridge-reconcile
     runtime: node
+    plan: starter
     schedule: "*/5 * * * *"
     buildCommand: npm ci
     startCommand: node scripts/reconcile.mjs
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: INTERNAL_CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: bridge-backups
+    runtime: node
+    plan: starter
+    schedule: "17 2 * * *"
+    buildCommand: npm ci
+    startCommand: node scripts/collect-backups.mjs
     envVars:
       - key: APP_URL
         sync: false
