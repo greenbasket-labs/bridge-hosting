@@ -1,7 +1,7 @@
-import type { HostingProvider, ProviderAppConfig, ProviderDeployment } from './types';
+import type { HostingProvider, ProviderAppConfig, ProviderDeployment, ProviderBackup } from './types';
 const base='https://api.render.com/v1';
 const key=()=>{if(!process.env.RENDER_API_KEY) throw new Error('RENDER_API_KEY is not configured');return process.env.RENDER_API_KEY};
-async function api(path:string,init:RequestInit={}){const r=await fetch(`${base}${path}`,{...init,headers:{Authorization:`Bearer ${key()}`,'Content-Type':'application/json',...(init.headers||{})}});if(!r.ok) throw new Error(`Render API ${r.status}: ${await r.text()}`);return r.json()}
+async function api(path:string,init:RequestInit={}){const r=await fetch(`${base}${path}`,{...init,headers:{Authorization:`Bearer ${key()}`,'Content-Type':'application/json',...(init.headers||{})}});if(!r.ok) throw new Error(`Render API ${r.status}: ${await r.text()}`);if(r.status===204) return null;return r.json()}
 function latest(x:any){const series=Array.isArray(x)?x:(Array.isArray(x?.data)?x.data:[]);let point:any=null;for(const s of series){const values=Array.isArray(s?.values)?s.values:[];if(values.length){const p=values[values.length-1];if(!point||new Date(p.timestamp).getTime()>new Date(point.timestamp).getTime()) point=p;}}return Number(point?.value||0)}
 async function metric(path:string,id:string){return api(`${path}?resource=${encodeURIComponent(id)}&resolutionSeconds=60&aggregationMethod=AVG`)}
 export class RenderProvider implements HostingProvider {
@@ -19,4 +19,20 @@ export class RenderProvider implements HostingProvider {
  }
  async configureDomain(id:string,hostname:string){const x=await api(`/services/${id}/custom-domains`,{method:'POST',body:JSON.stringify({name:hostname})});const d=x.customDomain||x;return {target:d.domain?.name||d.name||'',verified:d.verificationStatus==='verified',sslActive:d.sslStatus==='active'};}
  async getDeploymentStatus(id:string,did:string):Promise<ProviderDeployment>{const x=await api(`/services/${id}/deploys/${did}`);const d=x.deploy||x;return {id:d.id,status:d.status||'UNKNOWN',logs:''};}
+ // Backup capability applies to a Render Postgres resource ID, not a web-service ID.
+ async createBackup(postgresId:string):Promise<ProviderBackup>{
+  await api(`/postgres/${encodeURIComponent(postgresId)}/export`,{method:'POST'});
+  const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);
+  const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];
+  const newest=items.sort((a:any,b:any)=>new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime())[0];
+  if(!newest?.id) throw new Error('Render export started but no export record was returned');
+  return {id:newest.id,status:newest.url?'COMPLETED':'PENDING',storageRef:newest.url||null,createdAt:newest.createdAt};
+ }
+ async getBackupStatus(postgresId:string,backupId:string):Promise<ProviderBackup>{
+  const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);
+  const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];
+  const found=items.find((item:any)=>item?.id===backupId);
+  if(!found) throw new Error('Render backup export not found');
+  return {id:found.id,status:found.url?'COMPLETED':'PENDING',storageRef:found.url||null,createdAt:found.createdAt};
+ }
 }
