@@ -1,4 +1,4 @@
-import type { HostingProvider, ProviderAppConfig, ProviderDeployment, ProviderBackup } from './types';
+import type { HostingProvider, ProviderAppConfig, ProviderDeployment, ProviderBackup, ProviderRecovery } from './types';
 const base='https://api.render.com/v1';
 const key=()=>{if(!process.env.RENDER_API_KEY) throw new Error('RENDER_API_KEY is not configured');return process.env.RENDER_API_KEY};
 async function api(path:string,init:RequestInit={}){const r=await fetch(`${base}${path}`,{...init,headers:{Authorization:`Bearer ${key()}`,'Content-Type':'application/json',...(init.headers||{})}});if(!r.ok) throw new Error(`Render API ${r.status}: ${await r.text()}`);if(r.status===204) return null;return r.json()}
@@ -10,29 +10,12 @@ export class RenderProvider implements HostingProvider {
  async stop(id:string){await api(`/services/${id}/suspend`,{method:'POST'});} async start(id:string){await api(`/services/${id}/resume`,{method:'POST'});} async restart(id:string){await api(`/services/${id}/restart`,{method:'POST'});} async delete(id:string){await api(`/services/${id}`,{method:'DELETE'});}
  async getStatus(id:string){const x=await api(`/services/${id}`);return x.service?.suspended?'SUSPENDED':x.service?.suspendedAt?'SUSPENDED':x.service?.state||'UNKNOWN';}
  async getLogs(id:string){const x=await api(`/services/${id}/logs?limit=200`);return JSON.stringify(x);}
- async getMetrics(id:string){
-  const [cpu,cpuLimit,memory,memoryLimit,disk,diskCapacity,requests]=await Promise.all([
-   metric('/metrics/cpu',id),metric('/metrics/cpu-limit',id),metric('/metrics/memory',id),metric('/metrics/memory-limit',id),metric('/metrics/disk-usage',id),metric('/metrics/disk-capacity',id),metric('/metrics/http-requests',id)
-  ]);
-  const cpuUsed=latest(cpu),cpuMax=latest(cpuLimit),ramUsed=latest(memory),ramMax=latest(memoryLimit),diskUsed=latest(disk),diskMax=latest(diskCapacity);
-  return {cpuPercent:cpuMax>0?Math.min(100,(cpuUsed/cpuMax)*100):0,ramPercent:ramMax>0?Math.min(100,(ramUsed/ramMax)*100):0,storagePercent:diskMax>0?Math.min(100,(diskUsed/diskMax)*100):0,bandwidthPercent:0,requests:latest(requests),concurrentUsers:0};
- }
+ async getMetrics(id:string){const [cpu,cpuLimit,memory,memoryLimit,disk,diskCapacity,requests]=await Promise.all([metric('/metrics/cpu',id),metric('/metrics/cpu-limit',id),metric('/metrics/memory',id),metric('/metrics/memory-limit',id),metric('/metrics/disk-usage',id),metric('/metrics/disk-capacity',id),metric('/metrics/http-requests',id)]);const cpuUsed=latest(cpu),cpuMax=latest(cpuLimit),ramUsed=latest(memory),ramMax=latest(memoryLimit),diskUsed=latest(disk),diskMax=latest(diskCapacity);return {cpuPercent:cpuMax>0?Math.min(100,(cpuUsed/cpuMax)*100):0,ramPercent:ramMax>0?Math.min(100,(ramUsed/ramMax)*100):0,storagePercent:diskMax>0?Math.min(100,(diskUsed/diskMax)*100):0,bandwidthPercent:0,requests:latest(requests),concurrentUsers:0};}
  async configureDomain(id:string,hostname:string){const x=await api(`/services/${id}/custom-domains`,{method:'POST',body:JSON.stringify({name:hostname})});const d=x.customDomain||x;return {target:d.domain?.name||d.name||'',verified:d.verificationStatus==='verified',sslActive:d.sslStatus==='active'};}
  async getDeploymentStatus(id:string,did:string):Promise<ProviderDeployment>{const x=await api(`/services/${id}/deploys/${did}`);const d=x.deploy||x;return {id:d.id,status:d.status||'UNKNOWN',logs:''};}
- // Backup capability applies to a Render Postgres resource ID, not a web-service ID.
- async createBackup(postgresId:string):Promise<ProviderBackup>{
-  await api(`/postgres/${encodeURIComponent(postgresId)}/export`,{method:'POST'});
-  const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);
-  const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];
-  const newest=items.sort((a:any,b:any)=>new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime())[0];
-  if(!newest?.id) throw new Error('Render export started but no export record was returned');
-  return {id:newest.id,status:newest.url?'COMPLETED':'PENDING',storageRef:newest.url||null,createdAt:newest.createdAt};
- }
- async getBackupStatus(postgresId:string,backupId:string):Promise<ProviderBackup>{
-  const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);
-  const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];
-  const found=items.find((item:any)=>item?.id===backupId);
-  if(!found) throw new Error('Render backup export not found');
-  return {id:found.id,status:found.url?'COMPLETED':'PENDING',storageRef:found.url||null,createdAt:found.createdAt};
- }
+ async createBackup(postgresId:string):Promise<ProviderBackup>{await api(`/postgres/${encodeURIComponent(postgresId)}/export`,{method:'POST'});const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];const newest=items.sort((a:any,b:any)=>new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime())[0];if(!newest?.id) throw new Error('Render export started but no export record was returned');return {id:newest.id,status:newest.url?'COMPLETED':'PENDING',storageRef:newest.url||null,createdAt:newest.createdAt};}
+ async getBackupStatus(postgresId:string,backupId:string):Promise<ProviderBackup>{const x=await api(`/postgres/${encodeURIComponent(postgresId)}/export`);const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[];const found=items.find((item:any)=>item?.id===backupId);if(!found) throw new Error('Render backup export not found');return {id:found.id,status:found.url?'COMPLETED':'PENDING',storageRef:found.url||null,createdAt:found.createdAt};}
+ // Render PITR creates a new Postgres instance; Bridge deliberately does not cut over automatically.
+ async createRecovery(postgresId:string,restoreTime:string,name:string):Promise<ProviderRecovery>{const x=await api(`/postgres/${encodeURIComponent(postgresId)}/recovery`,{method:'POST',body:JSON.stringify({restoreName:name,restoreTime})});const r=x.recovery||x;return {id:r.id||r.resourceId||r.postgresId||'',status:r.status||r.state||'RECOVERY_IN_PROGRESS',resourceId:r.resourceId||r.postgresId||r.id||null,internalUrl:r.internalUrl||r.postgres?.internalConnectionString||null,createdAt:r.createdAt};}
+ async getRecoveryStatus(postgresId:string,recoveryId:string):Promise<ProviderRecovery>{const x=await api(`/postgres/${encodeURIComponent(postgresId)}/recovery`);const items=Array.isArray(x?.items)?x.items:Array.isArray(x)?x:[x?.recovery||x];const r=items.find((item:any)=>item?.id===recoveryId||item?.resourceId===recoveryId||item?.postgresId===recoveryId)||items[0];if(!r?.id&&!r?.resourceId&&!r?.postgresId) throw new Error('Render recovery not found');return {id:r.id||r.resourceId||r.postgresId,status:r.status||r.state||'UNKNOWN',resourceId:r.resourceId||r.postgresId||r.id||null,internalUrl:r.internalUrl||r.postgres?.internalConnectionString||null,createdAt:r.createdAt};}
 }
