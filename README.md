@@ -136,7 +136,7 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 - [x] Hard usage protection for supported plan metrics
 - [ ] Resource overage policy
 - [x] Automatic suspension when a supported plan metric reaches 100%
-- [ ] Usage dashboard
+- [x] Usage dashboard
 
 ## Phase 5 — Backups & Recovery
 
@@ -204,7 +204,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] One-click redeploy
 - [x] One-click rollback
 - [x] Domain management UI
-- [ ] Usage dashboard
+- [x] Usage dashboard
 - [x] Plan management — current plan/status view
 - [x] Plan management — plan selection + checkout
 - [x] Backup management
@@ -212,7 +212,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [ ] Customer support/contact flow
 - [ ] Mobile-friendly experience
 
-The customer dashboard gives a single application list with human-readable status and plan information. Application pages now also expose the logs already collected for recent deployments, with a simple deployment selector for reviewing individual deployment output.
+The customer dashboard gives a single application list with human-readable status and plan information. Application pages expose recent deployment logs and a simple usage dashboard showing the latest collected CPU, RAM, storage, bandwidth, request, and concurrent-user measurements. Request and concurrent-user values are shown against plan limits when those limits are configured.
 
 ## Phase 8 — Admin & Operations
 
@@ -314,6 +314,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 7 — Customer Experience**
 
-Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, and backup management.**
+Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, usage dashboard, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, and backup management.**
 
-Next task: **usage dashboard — show the latest supported resource usage against the customer's plan, using the usage data Bridge already collects.**
+Next task: **notifications center — let customers see the notifications Bridge already records, without adding a new notification system.**
