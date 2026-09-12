@@ -132,7 +132,7 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 - [ ] File-storage monitoring
 - [x] Usage history data capture
 - [x] Usage percentage against plan for supported metrics
-- [ ] Soft usage warnings
+- [x] Soft usage warnings for supported plan metrics
 - [ ] Hard usage protection
 - [ ] Resource overage policy
 - [ ] Automatic suspension policy for severe abuse/overuse
@@ -295,6 +295,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 4 — Real Usage & Resource Control**
 
-Completed: **provider usage collection, real Render metrics, and plan-relative percentages for supported request/concurrent-user metrics.**
+Completed: **provider usage collection, real Render metrics, plan-relative percentages for supported metrics, and soft usage warnings.**
 
-Next task: **soft usage warnings — no automatic suspension or billing overages yet.**
+Next task: **hard usage protection — still without billing overages or automatic suspension until those policies are deliberately designed.**
