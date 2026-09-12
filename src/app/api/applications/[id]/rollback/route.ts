@@ -11,8 +11,9 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
     const app=await db.application.findFirst({where:{id,customerId:user.customer.id}});
     if(!app)return NextResponse.json({error:'Application not found'},{status:404});
     if(!app.providerResourceId)return NextResponse.json({error:'Application provider resource not found'},{status:409});
-    const good=await db.deployment.findFirst({where:{applicationId:id,status:'SUCCESS',commitSha:{not:null}},orderBy:{createdAt:'desc'}});
-    if(!good?.commitSha)return NextResponse.json({error:'No successful deployment is available for rollback'},{status:409});
+    const current=await db.deployment.findFirst({where:{applicationId:id,status:'SUCCESS',commitSha:{not:null}},orderBy:{createdAt:'desc'}});
+    const good=await db.deployment.findFirst({where:{applicationId:id,status:'SUCCESS',commitSha:{not:null},...(current?{id:{not:current.id}}:{})},orderBy:{createdAt:'desc'}});
+    if(!good?.commitSha)return NextResponse.json({error:'No previous successful deployment is available for rollback'},{status:409});
     const d=await db.deployment.create({data:{applicationId:id,commitSha:good.commitSha,branch:good.branch,commitMessage:`Rollback to ${good.commitSha.slice(0,7)}`,status:'QUEUED'}});
     await db.application.update({where:{id},data:{status:'DEPLOYING',deploymentStatus:'QUEUED'}});
     try{
