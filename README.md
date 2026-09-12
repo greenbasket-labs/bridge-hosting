@@ -176,7 +176,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Paystack transaction identity/replay hardening
 - [ ] Production payment provider integration hardening
 - [x] Subscription lifecycle reconciliation
-- [ ] Payment webhooks for recurring lifecycle events
+- [x] Payment webhooks for recurring lifecycle events
 - [x] Failed/expired billing-period detection
 - [ ] Trial handling
 - [x] Monthly/yearly billing period activation
@@ -188,7 +188,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Billing attention notification for expired periods
 - [x] Customer plan and billing status view
 
-The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook and verification fulfillment use Paystack transaction identity to prevent duplicate/concurrent payment fulfillment. Plans can now optionally store a Paystack `plan_code`; when configured, Bridge includes it during checkout so Paystack can create the recurring subscription. Bridge also stores the resulting Paystack subscription identity for the next lifecycle-hardening step. A protected billing reconciliation worker detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. Customers can select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
+The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook and verification fulfillment use Paystack transaction identity to prevent duplicate/concurrent payment fulfillment. Plans can optionally store a Paystack `plan_code`; when configured, Bridge includes it during checkout and stores the resulting Paystack subscription identity. Recurring subscription and invoice lifecycle events now synchronize Bridge subscription status, while the protected billing reconciliation worker remains the fallback for expired periods. Customers can select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
 
 ## Phase 7 — Customer Experience
 
@@ -196,9 +196,9 @@ The billing foundation persists payment references, initializes server-side Pays
 
 Goal: make infrastructure feel simple to a non-technical customer.
 
-- [ ] Customer dashboard
+- [x] Customer dashboard
 - [x] Application overview
-- [ ] Clear Online/Offline/Updating states
+- [x] Clear Online/Offline/Updating states
 - [x] Deployment history UI
 - [ ] Deployment logs UI
 - [x] One-click redeploy
@@ -211,6 +211,8 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [ ] Notifications center
 - [ ] Customer support/contact flow
 - [ ] Mobile-friendly experience
+
+The customer dashboard now gives a single application list with human-readable Online, Offline, Updating, Suspended, and attention states, plus the current domain and plan for each application.
 
 ## Phase 8 — Admin & Operations
 
@@ -310,8 +312,8 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 6 — Billing & Plans**
+**Phase 7 — Customer Experience**
 
-Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, transaction-identity replay protection, monthly/yearly subscription activation, expired-period reconciliation with billing notifications, customer plan/billing visibility, paid plan selection/checkout, and optional Paystack recurring-plan checkout setup.**
+Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, and backup management.**
 
-Next task: **handle the small set of Paystack recurring lifecycle webhooks needed to keep Bridge subscriptions synchronized.**
+Next task: **deployment logs UI — expose the existing deployment logs in the customer application view without adding a new backend system.**
