@@ -58,7 +58,7 @@ Bridge is being developed in stages. This roadmap is the source of truth for the
 
 ## Phase 1 — Reliable Deployment Engine
 
-**Status: 🟡 In progress**
+**Status: 🟢 Completed**
 
 Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimistic.
 
@@ -76,11 +76,11 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 - [x] Add deployment timeout handling
 - [x] Add deployment retry policy
 - [x] Add deployment cancellation
-- [ ] Improve deployment logs and customer-facing error messages
+- [x] Improve deployment logs and customer-facing deployment states
 
 ## Phase 2 — Application Health & Availability
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: Bridge should know whether the customer's application is actually healthy.
 
@@ -289,6 +289,6 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 1 — Reliable Deployment Engine**
+**Phase 2 — Application Health & Availability**
 
-Next task: **improve deployment logs and customer-facing deployment states, then begin Domains + HTTPS.**
+Next task: **configurable health-check path and persistent application availability state.**
