@@ -7,15 +7,19 @@ function authorized(req:Request){const secret=process.env.INTERNAL_CRON_SECRET;r
 export async function POST(req:Request){
   if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
   try{
-    const apps=await db.application.findMany({
-      where:{status:'LIVE',databaseResourceId:{not:null}},
-      select:{id:true,customer:{select:{userId:true}},provider:true,databaseResourceId:true,subscription:{select:{plan:{select:{backupRetentionDays:true}}}}},
-    });
-    let created=0,skipped=0,unsupported=0,failed=0;
+    const apps=await db.application.findMany({where:{status:'LIVE',databaseResourceId:{not:null}},select:{id:true,customer:{select:{userId:true}},provider:true,databaseResourceId:true,subscription:{select:{plan:{select:{backupRetentionDays:true}}}}}});
+    let created=0,skipped=0,unsupported=0,failed=0,expired=0;
     const since=new Date(Date.now()-24*60*60*1000);
-
     for(const app of apps){
-      if((app.subscription?.plan.backupRetentionDays??0)<=0){skipped++;continue;}
+      const retentionDays=app.subscription?.plan.backupRetentionDays??0;
+      if(retentionDays<=0){skipped++;continue;}
+      const cutoff=new Date(Date.now()-retentionDays*24*60*60*1000);
+      const stale=await db.backup.findMany({where:{applicationId:app.id,createdAt:{lt:cutoff},status:{in:['COMPLETED','PENDING']}},select:{id:true,status:true}});
+      if(stale.length){
+        await db.backup.updateMany({where:{id:{in:stale.map(x=>x.id)}},data:{status:'EXPIRED'}});
+        for(const backup of stale){await db.auditLog.create({data:{userId:app.customer.userId,action:'BACKUP_EXPIRED',entityType:'Backup',entityId:backup.id,metadata:{applicationId:app.id,provider:app.provider,previousStatus:backup.status,retentionDays}}});}
+        expired+=stale.length;
+      }
       const recent=await db.backup.findFirst({where:{applicationId:app.id,createdAt:{gte:since}},select:{id:true}});
       if(recent){skipped++;continue;}
       const provider=getProvider(app.provider);
@@ -34,6 +38,6 @@ export async function POST(req:Request){
         failed++;
       }
     }
-    return NextResponse.json({ok:true,created,skipped,unsupported,failed});
+    return NextResponse.json({ok:true,created,skipped,unsupported,failed,expired});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Backup reconciliation failed'},{status:500});}
 }
