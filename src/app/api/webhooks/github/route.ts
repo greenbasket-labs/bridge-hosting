@@ -17,7 +17,7 @@ export async function POST(req:Request){
     for(const app of apps){
       if(!app.providerResourceId)continue;
       const latest=await db.deployment.findFirst({where:{applicationId:app.id},orderBy:{createdAt:'desc'}});
-      if(latest?.commitSha===sha&&['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK','SUCCESS'].includes(latest.status))continue;
+      if(latest?.commitSha===sha && latest && ['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK','SUCCESS'].includes(latest.status))continue;
       const active=await db.deployment.findFirst({where:{applicationId:app.id,status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']}},orderBy:{createdAt:'desc'}});
       if(active){
         await db.deployment.updateMany({where:{applicationId:app.id,status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},id:{not:active.id}},data:{status:'CANCELLED',errorMessage:'Superseded by a newer commit'}});
