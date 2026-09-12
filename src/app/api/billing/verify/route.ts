@@ -16,18 +16,27 @@ export async function GET(req:Request){
     const x=await r.json();
     if(!r.ok||!x?.status)throw new Error(x?.message||'Paystack verification failed');
     const payment=x.data;
-    const paid=payment?.status==='success'&&String(payment?.reference)===reference&&String(payment?.currency||'NGN')==='NGN'&&Number(payment?.amount)===Number(tx.amountKobo);
+    const providerTransactionId=payment?.id==null?'':String(payment.id);
+    const paid=payment?.status==='success'&&String(payment?.reference)===reference&&providerTransactionId!==''&&String(payment?.currency||'NGN')==='NGN'&&Number(payment?.amount)===Number(tx.amountKobo);
     if(!paid){
       await db.billingTransaction.update({where:{id:tx.id},data:{status:payment?.status==='failed'?'FAILED':'PENDING'}});
       return NextResponse.json({status:payment?.status||'PENDING',verified:false});
     }
+    const existing=await db.billingTransaction.findUnique({where:{providerTransactionId},select:{id:true,status:true}});
+    if(existing&&existing.id!==tx.id)return NextResponse.json({status:'DUPLICATE',verified:false});
     const end=new Date();
     if(tx.plan.billingInterval==='YEARLY')end.setFullYear(end.getFullYear()+1);else end.setMonth(end.getMonth()+1);
-    await db.$transaction([
-      db.billingTransaction.update({where:{id:tx.id},data:{status:'PAID',paidAt:new Date(payment.paid_at||Date.now())}}),
-      db.subscription.update({where:{applicationId:tx.applicationId},data:{planId:tx.planId,status:'ACTIVE',currentPeriodEnd:end}}),
-      db.auditLog.create({data:{userId:user.id,action:'BILLING_PAYMENT_CONFIRMED',entityType:'BillingTransaction',entityId:tx.id,metadata:{applicationId:tx.applicationId,planId:tx.planId,reference}}})
-    ]);
+    try{
+      await db.$transaction([
+        db.billingTransaction.update({where:{id:tx.id},data:{status:'PAID',providerTransactionId,paidAt:new Date(payment.paid_at||Date.now())}}),
+        db.subscription.update({where:{applicationId:tx.applicationId},data:{planId:tx.planId,status:'ACTIVE',currentPeriodEnd:end}}),
+        db.auditLog.create({data:{userId:user.id,action:'BILLING_PAYMENT_CONFIRMED',entityType:'BillingTransaction',entityId:tx.id,metadata:{applicationId:tx.applicationId,planId:tx.planId,reference,providerTransactionId,source:'paystack_verify'}}})
+      ]);
+    }catch(error){
+      const message=error instanceof Error?error.message:'';
+      if(message.includes('Unique constraint')&&message.includes('providerTransactionId'))return NextResponse.json({status:'DUPLICATE',verified:false});
+      throw error;
+    }
     return NextResponse.json({status:'PAID',verified:true,applicationId:tx.applicationId,currentPeriodEnd:end.toISOString()});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Payment verification failed'},{status:502});}
 }
