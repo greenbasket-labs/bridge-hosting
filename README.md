@@ -179,7 +179,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Failed/expired billing-period detection
 - [ ] Trial handling
 - [x] Monthly/yearly billing period activation
-- [ ] Upgrade flow
+- [x] Upgrade flow — plan selection + correctly priced checkout
 - [ ] Downgrade flow
 - [ ] Custom plans
 - [ ] Invoice/receipt history
@@ -187,7 +187,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Billing attention notification for expired periods
 - [x] Customer plan and billing status view
 
-The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. A protected billing reconciliation worker detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. The application page now shows the customer's current plan, price, billing status, current period end, and recent payment history.
+The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. A protected billing reconciliation worker detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. Customers can now select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
 
 ## Phase 7 — Customer Experience
 
@@ -205,6 +205,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] Domain management UI
 - [ ] Usage dashboard
 - [x] Plan management — current plan/status view
+- [x] Plan management — plan selection + checkout
 - [x] Backup management
 - [ ] Notifications center
 - [ ] Customer support/contact flow
@@ -310,6 +311,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 6 — Billing & Plans**
 
-Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, monthly/yearly subscription activation, expired-period reconciliation with billing notifications, and customer plan/billing visibility.**
+Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, monthly/yearly subscription activation, expired-period reconciliation with billing notifications, customer plan/billing visibility, and paid plan selection/checkout.**
 
-Next task: **upgrade flow — let a customer choose an available plan and start a correctly priced checkout, without implementing downgrades or complex proration yet.**
+Next task: **billing production hardening — make webhook events safer against replay and ensure payment lifecycle handling is production-ready before adding more billing complexity.**
