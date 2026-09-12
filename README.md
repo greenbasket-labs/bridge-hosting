@@ -91,7 +91,7 @@ Goal: Bridge should know whether the customer's application is actually healthy.
 - [x] Provider deployment + application health combined state
 - [x] Automatic unhealthy detection
 - [x] Recovery detection
-- [ ] Customer notifications for outages/recovery
+- [x] Customer notifications for outages/recovery
 - [x] Admin health dashboard
 
 ## Phase 3 — Domains & HTTPS
@@ -216,7 +216,7 @@ The customer experience now adapts its navigation, cards, forms, action buttons,
 
 ## Phase 8 — Admin & Operations
 
-**Status: 🟡 In progress**
+**Status: 🟢 Completed**
 
 Goal: give Bridge operators the tools needed to operate many customers safely.
 
@@ -232,13 +232,13 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [x] Audit log viewer
 - [x] Customer support tools
 - [x] Manual intervention controls
-- [ ] Operational alerts
+- [x] Operational alerts
 
-The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers. The deployment operations dashboard provides a compact read-only view of the latest 100 deployments, active deployment count, failed deployment count, commit, retry count, customer, application, and timestamps. The failed deployment queue focuses on `FAILED` and `BUILD_FAILED` deployments, showing the recorded error, retry count, commit, customer, application, and creation time without adding operator actions yet. The health/outage dashboard provides a read-only view of offline, checking, and failed applications with health-check status, last check time, and recorded health errors. The usage overview provides the latest collected CPU, RAM, storage, request, and concurrent-user usage for up to 100 applications alongside their plan limits and usage percentages, with a simple 80%+ attention count. The resource capacity overview provides aggregate application/plan counts and average collected CPU, RAM, and storage usage while explicitly treating them as allocation indicators because the provider adapter does not yet expose provider-wide hard capacity limits. Provider configuration management now exposes a minimal read-only list of configured providers, their type, enabled state, and whether configuration data exists; it does not expose secrets or mutation controls. The audit log viewer exposes the latest 100 audit events with time, action, entity, and actor, without adding mutation or sensitive metadata controls. Customer support tools now provide a read-only operator view of recent customers, their contact email, application count, and whether their visible applications have offline or failed states; ticketing and intervention controls are intentionally deferred. Manual intervention controls now expose only an explicit admin-triggered application restart through the provider adapter; the action requires an `ADMIN` session, confirms in the UI, records success/failure in the audit log, and does not expose destructive provider operations.
+Operational alerts reuse the existing notification center and generate deduplicated customer/admin alerts for failed deployments, application outages, and critical supported usage limits, without introducing a separate alerting system.
 
 ## Phase 9 — Security & Production Hardening
 
-**Status: ⚪ Planned**
+**Status: 🟡 Next for V1**
 
 Goal: make Bridge safe to operate as a real hosting business.
 
@@ -314,8 +314,14 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 8 — Admin & Operations**
+**Phase 8 — Admin & Operations completed.**
 
-Completed: **customer administration, application administration, provider resource view, deployment operations dashboard, failed deployment queue, health/outage dashboard, usage overview, resource capacity overview, provider configuration management, audit log viewer, customer support tools, and manual intervention controls.**
+Operational alerts are now implemented. **Next task: Phase 9 security & production hardening, focused only on the launch-critical controls needed for Bridge V1.**
 
-Next task: **operational alerts — minimal alerts for failed deployments, application outages, and critical usage conditions.**
+## Bridge V1 finish line
+
+Bridge V1 does **not** require every future roadmap item. V1 is ready when the core loop works reliably in production:
+
+**Customer → GitHub → Bridge → Provider → Live application → Domain/HTTPS → Billing → Usage/health monitoring → Alerts → Support.**
+
+The remaining V1 work is a focused production-hardening and verification pass: secrets/credentials, webhook replay protection, rate limiting, validation, tenant authorization, secure environment handling, database migration/recovery procedures, production billing/provider configuration, and an end-to-end smoke test with a real application. Multi-provider infrastructure and advanced services remain post-V1.
