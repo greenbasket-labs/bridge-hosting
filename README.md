@@ -114,11 +114,12 @@ Goal: turn a provider URL into a professional customer-owned application address
 
 ## Phase 4 — Real Usage & Resource Control
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: measure actual resource consumption and enforce fair plan limits.
 
-- [ ] Provider metrics collection
+- [x] Provider metrics collection worker
+- [x] Usage collection scheduler command
 - [ ] CPU monitoring
 - [ ] RAM monitoring
 - [ ] Storage monitoring
@@ -127,7 +128,7 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 - [ ] Concurrent-user monitoring where supported
 - [ ] Database usage monitoring
 - [ ] File-storage monitoring
-- [ ] Usage history
+- [x] Usage history data capture
 - [ ] Usage percentage against plan
 - [ ] Soft usage warnings
 - [ ] Hard usage protection
@@ -290,8 +291,8 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 3 — Domains & HTTPS**
+**Phase 4 — Real Usage & Resource Control**
 
-Completed: **customer-facing domain management UI**.
+Completed: **provider usage collection worker and usage history capture.**
 
-Next task: **optional Bridge-managed domain registration and domain renewal/lifecycle support.**
+Next task: **real provider metrics for CPU, RAM, storage, bandwidth, requests, and concurrent users, followed by plan-relative usage percentages.**
