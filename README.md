@@ -223,7 +223,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [x] Customer administration
 - [x] Application administration
 - [x] Provider resource view
-- [ ] Deployment operations dashboard
+- [x] Deployment operations dashboard
 - [ ] Failed deployment queue
 - [ ] Health/outage dashboard
 - [ ] Usage overview
@@ -234,7 +234,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [ ] Manual intervention controls
 - [ ] Operational alerts
 
-The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers.
+The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers. The deployment operations dashboard provides a compact read-only view of the latest 100 deployments, active deployment count, failed deployment count, commit, retry count, customer, application, and timestamps.
 
 ## Phase 9 — Security & Production Hardening
 
@@ -316,6 +316,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 8 — Admin & Operations**
 
-Completed: **customer administration, application administration, and provider resource view.**
+Completed: **customer administration, application administration, provider resource view, and deployment operations dashboard.**
 
-Next task: **deployment operations dashboard — give Bridge operators a compact view of active, failed, and recent deployments.**
+Next task: **failed deployment queue — give operators a focused view of deployments that need attention.**
