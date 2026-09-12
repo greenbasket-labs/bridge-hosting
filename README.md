@@ -200,7 +200,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] Application overview
 - [x] Clear Online/Offline/Updating states
 - [x] Deployment history UI
-- [ ] Deployment logs UI
+- [x] Deployment logs UI
 - [x] One-click redeploy
 - [x] One-click rollback
 - [x] Domain management UI
@@ -212,7 +212,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [ ] Customer support/contact flow
 - [ ] Mobile-friendly experience
 
-The customer dashboard now gives a single application list with human-readable Online, Offline, Updating, Suspended, and attention states, plus the current domain and plan for each application.
+The customer dashboard gives a single application list with human-readable status and plan information. Application pages now also expose the logs already collected for recent deployments, with a simple deployment selector for reviewing individual deployment output.
 
 ## Phase 8 — Admin & Operations
 
@@ -314,6 +314,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 7 — Customer Experience**
 
-Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, and backup management.**
+Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, and backup management.**
 
-Next task: **deployment logs UI — expose the existing deployment logs in the customer application view without adding a new backend system.**
+Next task: **usage dashboard — show the latest supported resource usage against the customer's plan, using the usage data Bridge already collects.**
