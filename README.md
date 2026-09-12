@@ -156,20 +156,10 @@ Goal: protect customer applications and make recovery practical.
 - [x] Backup integrity checks
 - [x] Safe Render PITR recovery initiation
 - [x] Recovery verification endpoint
-- [ ] Recovery history
+- [x] Recovery history
 - [ ] Customer backup controls
 
-Automated backups run once per day for live applications whose plan has `backupRetentionDays > 0` and whose database resource is configured. The job skips applications that already have a backup from the previous 24 hours, uses the selected provider's backup capability, and records scheduled backup success/failure in Bridge's audit log.
-
-Bridge retention enforcement marks completed or still-pending backup records older than the plan's `backupRetentionDays` as `EXPIRED` and hides them from the customer backup list. This is a **Bridge metadata/visibility retention policy**, not provider-side deletion.
-
-Completed backups are integrity-checked through the provider's backup-status capability. A provider record that cannot be found or is not completed causes the Bridge backup to be marked `FAILED` and is written to the audit log.
-
-Bridge now exposes a customer-scoped recovery operation for providers that support isolated database recovery. For Render, this starts PITR and creates a **new Postgres instance** at a requested restore time; Bridge does not automatically replace the application's live database connection.
-
-Recovery verification now checks the provider recovery status and requires a provider resource ID before reporting the recovery as verified. Verification explicitly returns `cutoverRequired: true`; Bridge does not perform the database cutover automatically.
-
-Render backup and recovery operations require a **Postgres resource ID** and remain separate from the web-service resource ID.
+Recovery history reuses the existing audit log rather than adding another persistence model. The customer-scoped history endpoint returns the latest 50 recovery lifecycle events for the application, including started, verified, not-ready, and failed attempts.
 
 ## Phase 6 — Billing & Plans
 
@@ -311,6 +301,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **automated daily backups, plan-based retention, provider integrity verification, safe Render PITR recovery initiation, and recovery readiness verification.**
+Completed: **automated daily backups, plan-based retention, provider integrity verification, safe Render PITR recovery initiation, recovery readiness verification, and auditable recovery history.**
 
-Next task: **recovery history — keep a small auditable record of recovery attempts and their outcomes.**
+Next task: **customer backup controls — expose the existing safe backup/recovery operations without adding unnecessary infrastructure.**
