@@ -9,7 +9,7 @@ export async function POST(req:Request){
   if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
   try{
     const apps=await db.application.findMany({where:{status:{in:['LIVE','DEPLOYING']}},select:{id:true,customer:{select:{userId:true}},providerResourceId:true,subscription:{select:{plan:{select:{requests:true,concurrentUsers:true}}}}}});
-    const provider=getProvider();let checked=0,failed=0,warnings=0;
+    const provider=getProvider();let checked=0,failed=0,warnings=0,suspended=0;
     for(const app of apps){
       if(!app.providerResourceId)continue;
       try{
@@ -18,6 +18,14 @@ export async function POST(req:Request){
         const plan=app.subscription?.plan;
         const requestPct=pct(m.requests,plan?.requests||0);
         const userPct=pct(m.concurrentUsers,plan?.concurrentUsers||0);
+        const hardMetrics=[requestPct>=100?'requests':null,userPct>=100?'concurrent users':null].filter(Boolean) as string[];
+        if(hardMetrics.length){
+          await provider.stop(app.providerResourceId);
+          await db.application.update({where:{id:app.id},data:{status:'SUSPENDED',availabilityStatus:'OFFLINE'}});
+          await db.notification.create({data:{userId:app.customer.userId,type:'USAGE_LIMIT_REACHED',title:'Application suspended for usage limit',message:`${app.id}: ${hardMetrics.join(' and ')} usage reached 100% of the plan limit. The application was suspended to prevent further overuse.`}});
+          await db.auditLog.create({data:{userId:app.customer.userId,action:'USAGE_LIMIT_SUSPEND',entityType:'APPLICATION',entityId:app.id,metadata:{metrics:hardMetrics,requestPct,userPct}}});
+          suspended++;continue;
+        }
         const highMetrics=[requestPct>=80?'requests':null,userPct>=80?'concurrent users':null].filter(Boolean) as string[];
         if(highMetrics.length){
           const since=new Date(Date.now()-24*60*60*1000);
@@ -30,6 +38,6 @@ export async function POST(req:Request){
         checked++;
       }catch{failed++;}
     }
-    return NextResponse.json({ok:true,checked,failed,warnings});
+    return NextResponse.json({ok:true,checked,failed,warnings,suspended});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Usage reconciliation failed'},{status:500});}
 }
