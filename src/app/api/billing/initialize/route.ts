@@ -8,13 +8,15 @@ export async function POST(req:Request){
   if(!process.env.PAYSTACK_SECRET_KEY)return NextResponse.json({error:'PAYSTACK_SECRET_KEY is not configured'},{status:503});
   let body:any;try{body=await req.json();}catch{return NextResponse.json({error:'Invalid JSON body'},{status:400});}
   const applicationId=typeof body?.applicationId==='string'?body.applicationId:'';
-  if(!applicationId)return NextResponse.json({error:'applicationId is required'},{status:400});
-  const app=await db.application.findFirst({where:{id:applicationId,customerId:user.customer.id},include:{subscription:{include:{plan:true}}}});
+  const planId=typeof body?.planId==='string'?body.planId:'';
+  if(!applicationId||!planId)return NextResponse.json({error:'applicationId and planId are required'},{status:400});
+  const app=await db.application.findFirst({where:{id:applicationId,customerId:user.customer.id},include:{subscription:true}});
   if(!app)return NextResponse.json({error:'Application not found'},{status:404});
-  const plan=app.subscription?.plan;
-  if(!plan||!plan.active)return NextResponse.json({error:'Application has no active billing plan'},{status:409});
+  const plan=await db.plan.findFirst({where:{id:planId,active:true}});
+  if(!plan)return NextResponse.json({error:'Plan not found'},{status:404});
+  if(app.subscription?.planId===plan.id)return NextResponse.json({error:'Application is already on this plan'},{status:409});
+  if(plan.priceKobo<=0n)return NextResponse.json({error:'This plan does not require payment'},{status:409});
   const amount=plan.priceKobo;
-  if(amount<=0n)return NextResponse.json({error:'This plan does not require payment'},{status:409});
   const reference=`bridge-${crypto.randomUUID()}`;
   const tx=await db.billingTransaction.create({data:{customerId:user.customer.id,applicationId:app.id,planId:plan.id,reference,amountKobo:amount}});
   try{
