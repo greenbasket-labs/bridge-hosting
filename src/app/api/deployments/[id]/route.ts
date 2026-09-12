@@ -7,10 +7,10 @@ function normalizeStatus(status:string){
   const s=status.toUpperCase();
   if(['SUCCESS','SUCCEEDED','LIVE','COMPLETED'].includes(s))return 'SUCCESS' as const;
   if(['BUILD_FAILED','BUILD_ERROR'].includes(s))return 'BUILD_FAILED' as const;
-  if(['FAILED','ERROR'].includes(s))return 'FAILED' as const;
-  if(['DEPLOYING','DEPLOYED'].includes(s))return 'DEPLOYING' as const;
+  if(['FAILED','ERROR','UPDATE_FAILED'].includes(s))return 'FAILED' as const;
+  if(['DEPLOYING','DEPLOYED','UPDATE_IN_PROGRESS'].includes(s))return 'DEPLOYING' as const;
   if(['HEALTH_CHECK','HEALTHCHECK'].includes(s))return 'HEALTH_CHECK' as const;
-  if(['BUILDING','BUILD','IN_PROGRESS'].includes(s))return 'BUILDING' as const;
+  if(['BUILDING','BUILD','IN_PROGRESS','BUILD_IN_PROGRESS'].includes(s))return 'BUILDING' as const;
   if(['CANCELLED','CANCELED'].includes(s))return 'CANCELLED' as const;
   return 'QUEUED' as const;
 }
@@ -26,15 +26,20 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
 
     const app=await db.application.findUnique({where:{id:deployment.applicationId}});
     if(!app?.providerResourceId)return NextResponse.json({error:'Application provider resource not found'},{status:409});
-    const provider=getProvider();
-    const providerDeployment=await provider.getDeploymentStatus(app.providerResourceId,deployment.providerDeploymentId);
+    const providerDeployment=await getProvider().getDeploymentStatus(app.providerResourceId,deployment.providerDeploymentId);
     const status=normalizeStatus(providerDeployment.status);
     const now=new Date();
-    const data:{status:typeof status;logs?:string;errorMessage?:string|null;buildFinishedAt?:Date;deploymentStartedAt?:Date;deploymentFinishedAt?:Date}={status};
+    const data:{status:typeof status;logs?:string;errorMessage?:string|null;buildStartedAt?:Date;buildFinishedAt?:Date;deploymentStartedAt?:Date;deploymentFinishedAt?:Date}={status};
     if(providerDeployment.logs)data.logs=providerDeployment.logs;
-    if(status==='BUILDING'&&!deployment.buildStartedAt)data.buildFinishedAt=undefined;
-    if(status==='DEPLOYING'&&!deployment.deploymentStartedAt)data.deploymentStartedAt=now;
-    if(['SUCCESS','FAILED','BUILD_FAILED','CANCELLED'].includes(status))data.deploymentFinishedAt=deployment.deploymentFinishedAt||now;
+    if(status==='BUILDING'&&!deployment.buildStartedAt)data.buildStartedAt=now;
+    if(['DEPLOYING','HEALTH_CHECK'].includes(status)){
+      if(!deployment.buildFinishedAt)data.buildFinishedAt=now;
+      if(!deployment.deploymentStartedAt)data.deploymentStartedAt=now;
+    }
+    if(['SUCCESS','FAILED','BUILD_FAILED','CANCELLED'].includes(status)){
+      if(status!=='BUILD_FAILED'&&!deployment.buildFinishedAt)data.buildFinishedAt=now;
+      if(!deployment.deploymentFinishedAt)data.deploymentFinishedAt=now;
+    }
     if(['FAILED','BUILD_FAILED'].includes(status))data.errorMessage=providerDeployment.logs||'Deployment failed';
     const updated=await db.deployment.update({where:{id},data});
 
@@ -47,6 +52,7 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
         await db.application.update({where:{id:app.id},data:{status:previousSuccess?'LIVE':'FAILED',deploymentStatus:status}});
       }
     }
-    return NextResponse.json({deployment:updated,applicationStatus:(await db.application.findUnique({where:{id:app.id},select:{status:true,deploymentStatus:true}}))});
+    const applicationStatus=await db.application.findUnique({where:{id:app.id},select:{status:true,deploymentStatus:true}});
+    return NextResponse.json({deployment:updated,applicationStatus});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Could not reconcile deployment'},{status:500});}
 }
