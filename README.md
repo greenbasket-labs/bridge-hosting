@@ -174,9 +174,9 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Paystack payment verification
 - [x] Signed Paystack webhook handling
 - [ ] Production payment provider integration hardening
-- [ ] Subscription lifecycle
+- [x] Subscription lifecycle reconciliation
 - [ ] Payment webhooks for recurring lifecycle events
-- [ ] Failed-payment handling
+- [x] Failed/expired billing-period detection
 - [ ] Trial handling
 - [x] Monthly/yearly billing period activation
 - [ ] Upgrade flow
@@ -184,9 +184,9 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [ ] Custom plans
 - [ ] Invoice/receipt history
 - [ ] Usage-to-plan enforcement
-- [ ] Billing notifications
+- [x] Billing attention notification for expired periods
 
-The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. Browser verification remains available as a fallback.
+The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. A protected billing reconciliation worker now detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. Browser verification remains available as a fallback.
 
 ## Phase 7 — Customer Experience
 
@@ -309,6 +309,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 6 — Billing & Plans**
 
-Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, and monthly/yearly subscription period activation.**
+Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, monthly/yearly subscription activation, and expired-period reconciliation with billing notifications.**
 
-Next task: **small subscription lifecycle slice — handle recurring billing state changes and failed payments without building the full billing system yet.**
+Next task: **small customer plan-management slice — let a customer see their current plan, billing status, price, and renewal/expiry date before adding upgrades and downgrades.**
