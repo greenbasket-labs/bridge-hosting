@@ -173,7 +173,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Paystack payment initialization
 - [x] Paystack payment verification
 - [x] Signed Paystack webhook handling
-- [ ] Production payment provider integration hardening
+- [x] Paystack provider transaction identity and replay/concurrency hardening
 - [x] Subscription lifecycle reconciliation
 - [ ] Payment webhooks for recurring lifecycle events
 - [x] Failed/expired billing-period detection
@@ -187,7 +187,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Billing attention notification for expired periods
 - [x] Customer plan and billing status view
 
-The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. A protected billing reconciliation worker detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. Customers can now select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
+The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference and Paystack transaction identity, and accepts signed `charge.success` webhooks. Webhook and verification fulfillment are protected by the provider transaction ID so the same Paystack transaction cannot activate Bridge billing twice, including concurrent fulfillment races. A protected billing reconciliation worker detects expired active/trial periods, moves them to `PAST_DUE`, records an audit event, and creates a customer billing notification. Customers can now select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
 
 ## Phase 7 — Customer Experience
 
@@ -311,6 +311,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 6 — Billing & Plans**
 
-Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, monthly/yearly subscription activation, expired-period reconciliation with billing notifications, customer plan/billing visibility, and paid plan selection/checkout.**
+Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, provider transaction identity protection, concurrency-safe payment fulfillment, monthly/yearly subscription activation, expired-period reconciliation with billing notifications, customer plan/billing visibility, and paid plan selection/checkout.**
 
-Next task: **billing production hardening — make webhook events safer against replay and ensure payment lifecycle handling is production-ready before adding more billing complexity.**
+Next task: **keep billing simple — add recurring Paystack lifecycle events only when Bridge has a stable provider subscription identity to map them to the correct application.**
