@@ -120,11 +120,11 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 
 - [x] Provider metrics collection worker
 - [x] Usage collection scheduler command
-- [ ] CPU monitoring
-- [ ] RAM monitoring
-- [ ] Storage monitoring
+- [x] Render CPU monitoring
+- [x] Render RAM monitoring
+- [x] Render persistent-storage monitoring
 - [ ] Bandwidth monitoring
-- [ ] Request monitoring
+- [x] Render request monitoring
 - [ ] Concurrent-user monitoring where supported
 - [ ] Database usage monitoring
 - [ ] File-storage monitoring
@@ -293,6 +293,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 4 — Real Usage & Resource Control**
 
-Completed: **provider usage collection worker and usage history capture.**
+Completed: **provider usage collection plus real Render CPU, RAM, persistent-storage, and request metrics.**
 
-Next task: **real provider metrics for CPU, RAM, storage, bandwidth, requests, and concurrent users, followed by plan-relative usage percentages.**
+Next task: **keep the usage layer small: add plan-relative usage percentages for the metrics Bridge can reliably compare to plan limits.**
