@@ -146,11 +146,11 @@ Goal: protect customer applications and make recovery practical.
 
 - [x] Existing backup data model
 - [x] Provider backup capability boundary
-- [ ] Real provider backup implementation
+- [x] Render Postgres export backup capability
+- [x] Render backup export status lookup
 - [ ] Automated backup scheduling
 - [ ] Backup storage abstraction
 - [ ] Backup retention enforcement
-- [ ] Backup status tracking
 - [ ] Backup integrity checks
 - [ ] Manual backup creation
 - [ ] Restore workflow
@@ -158,7 +158,7 @@ Goal: protect customer applications and make recovery practical.
 - [ ] Recovery history
 - [ ] Customer backup controls
 
-The provider boundary is intentionally optional: providers that do not offer a real backup/restore mechanism are not treated as supporting backups.
+Render backup operations require a **Postgres resource ID** and are deliberately separate from the web-service resource ID. Render supports Postgres exports and provides export download URLs once available. citeturn0search0turn0search3
 
 ## Phase 6 — Billing & Plans
 
@@ -300,6 +300,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **the provider backup capability boundary is now defined without claiming unsupported providers can create or restore backups.**
+Completed: **provider backup boundary plus real Render Postgres export creation/status support.**
 
-Next task: **implement the first real provider backup capability only where the provider supports a genuine recoverable backup.**
+Next task: **connect that capability to Bridge's Backup records with a small, authenticated manual-backup flow.**
