@@ -108,6 +108,7 @@ Goal: turn a provider URL into a professional customer-owned application address
 - [x] HTTPS active state
 - [x] Domain error handling
 - [x] Multiple domains per application
+- [x] Customer-facing domain management UI
 - [ ] Optional Bridge-managed domain registration
 - [ ] Domain renewal/lifecycle support
 
@@ -183,7 +184,7 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [ ] Deployment logs UI
 - [ ] One-click redeploy
 - [ ] One-click rollback
-- [ ] Domain management UI
+- [x] Domain management UI
 - [ ] Usage dashboard
 - [ ] Plan management
 - [ ] Backup management
@@ -291,4 +292,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 3 — Domains & HTTPS**
 
-Next task: **domain management UI and final domain lifecycle/renewal handling.**
+Completed: **customer-facing domain management UI**.
+
+Next task: **optional Bridge-managed domain registration and domain renewal/lifecycle support.**
