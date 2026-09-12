@@ -2,6 +2,7 @@ import {NextResponse} from 'next/server';
 import {db} from '@/lib/db';
 import {getProvider} from '@/lib/providers';
 import {checkApplicationHealth} from '@/lib/health';
+import {createOperationalAlert} from '@/lib/alerts';
 
 const MAX_RETRIES=Number(process.env.DEPLOYMENT_MAX_RETRIES||2);
 
@@ -21,7 +22,7 @@ export async function POST(req:Request){
   if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
   try{
     const pending=await db.deployment.findMany({where:{status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},providerDeploymentId:{not:null}},include:{application:true},orderBy:{createdAt:'asc'},take:25});
-    const provider=getProvider();let reconciled=0,retried=0,healthChecked=0;
+    const provider=getProvider();let reconciled=0,retried=0,healthChecked=0,alerts=0;
     for(const deployment of pending){
       if(!deployment.application.providerResourceId)continue;
       try{
@@ -55,15 +56,28 @@ export async function POST(req:Request){
           else if(['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK'].includes(status))await db.application.update({where:{id:deployment.applicationId},data:{status:'DEPLOYING',deploymentStatus:status,availabilityStatus:'CHECKING'}});
           else if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){const previousSuccess=await db.deployment.findFirst({where:{applicationId:deployment.applicationId,status:'SUCCESS',id:{not:deployment.id}},orderBy:{createdAt:'desc'}});await db.application.update({where:{id:deployment.applicationId},data:{status:previousSuccess?'LIVE':'FAILED',deploymentStatus:status,availabilityStatus:previousSuccess?'UNKNOWN':'OFFLINE'}});}
         }
+        if(['FAILED','BUILD_FAILED'].includes(status)&&latest?.id===deployment.id){
+          alerts+=await createOperationalAlert({type:'DEPLOYMENT_FAILED',title:'Deployment failed',message:`${deployment.application.name}: deployment failed after ${deployment.retryCount} retry attempt${deployment.retryCount===1?'':'s'}. ${data.errorMessage||''}`.trim(),customerUserId:deployment.application.customerId? (await db.customer.findUnique({where:{id:deployment.application.customerId},select:{userId:true}}))?.userId:undefined,includeAdmins:true,dedupeKey:deployment.id});
+        }
         reconciled++;
       }catch(e){await db.deployment.update({where:{id:deployment.id},data:{errorMessage:e instanceof Error?e.message:'Reconciliation failed'}});}
     }
 
-    const liveApps=await db.application.findMany({where:{status:'LIVE'},select:{id:true,internalDomain:true,healthCheckPath:true},take:100});
+    const liveApps=await db.application.findMany({where:{status:'LIVE'},select:{id:true,name:true,customer:{select:{userId:true}},internalDomain:true,healthCheckPath:true},take:100});
     for(const app of liveApps){
       if(pending.some(d=>d.applicationId===app.id))continue;
-      try{await db.application.update({where:{id:app.id},data:{availabilityStatus:'CHECKING'}});await recordHealth(app.id,app);healthChecked++;}catch(e){await db.application.update({where:{id:app.id},data:{availabilityStatus:'OFFLINE',healthCheckedAt:new Date(),healthCheckError:e instanceof Error?e.message:'Health check failed'}});}}
+      try{
+        await db.application.update({where:{id:app.id},data:{availabilityStatus:'CHECKING'}});
+        const health=await recordHealth(app.id,app);healthChecked++;
+        if(health&&!health.healthy){
+          alerts+=await createOperationalAlert({type:'APPLICATION_OFFLINE',title:'Application is offline',message:`${app.name}: health checks are failing (${health.error||`HTTP ${health.status}`}). Check the application deployment and provider status.`,customerUserId:app.customer.userId,includeAdmins:true,dedupeKey:app.id});
+        }
+      }catch(e){
+        await db.application.update({where:{id:app.id},data:{availabilityStatus:'OFFLINE',healthCheckedAt:new Date(),healthCheckError:e instanceof Error?e.message:'Health check failed'}});
+        alerts+=await createOperationalAlert({type:'APPLICATION_OFFLINE',title:'Application is offline',message:`${app.name}: the health check could not be completed. Check the application and provider status.`,customerUserId:app.customer.userId,includeAdmins:true,dedupeKey:app.id});
+      }
+    }
 
-    return NextResponse.json({ok:true,checked:pending.length,reconciled,retried,healthChecked,maxRetries:MAX_RETRIES});
+    return NextResponse.json({ok:true,checked:pending.length,reconciled,retried,healthChecked,alerts,maxRetries:MAX_RETRIES});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Reconciliation failed'},{status:500});}
 }
