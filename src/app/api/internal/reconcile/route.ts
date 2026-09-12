@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {db} from '@/lib/db';
 import {getProvider} from '@/lib/providers';
+import {checkApplicationHealth} from '@/lib/health';
 
 function authorized(req:Request){
   const secret=process.env.INTERNAL_CRON_SECRET;
@@ -22,19 +23,14 @@ function normalizeStatus(status:string){
 export async function POST(req:Request){
   if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
   try{
-    const pending=await db.deployment.findMany({
-      where:{status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},providerDeploymentId:{not:null}},
-      include:{application:true},
-      orderBy:{createdAt:'asc'},
-      take:25,
-    });
+    const pending=await db.deployment.findMany({where:{status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},providerDeploymentId:{not:null}},include:{application:true},orderBy:{createdAt:'asc'},take:25});
     const provider=getProvider();
     let reconciled=0;
     for(const deployment of pending){
       if(!deployment.application.providerResourceId)continue;
       try{
         const pd=await provider.getDeploymentStatus(deployment.application.providerResourceId,deployment.providerDeploymentId!);
-        const status=normalizeStatus(pd.status); const now=new Date();
+        let status=normalizeStatus(pd.status); const now=new Date();
         const data:any={status};
         if(pd.logs)data.logs=pd.logs;
         if(status==='BUILDING'&&!deployment.buildStartedAt)data.buildStartedAt=now;
@@ -42,11 +38,37 @@ export async function POST(req:Request){
           if(!deployment.buildFinishedAt)data.buildFinishedAt=now;
           if(!deployment.deploymentStartedAt)data.deploymentStartedAt=now;
         }
-        if(['SUCCESS','FAILED','BUILD_FAILED','CANCELLED'].includes(status)){
-          if(!deployment.buildFinishedAt)data.buildFinishedAt=now;
-          if(!deployment.deploymentFinishedAt)data.deploymentFinishedAt=now;
+        if(status==='SUCCESS'){
+          const url=deployment.application.internalDomain;
+          if(/^https?:\/\//i.test(url)){
+            const health=await checkApplicationHealth(url);
+            if(!health.healthy){
+              status='HEALTH_CHECK';
+              data.status='HEALTH_CHECK';
+              data.logs=`Provider deployment succeeded, but application health check failed (${health.error||`HTTP ${health.status}`}).`;
+              if(Date.now()-deployment.createdAt.getTime()>15*60*1000){
+                status='FAILED';
+                data.status='FAILED';
+                data.errorMessage='Deployment timed out waiting for a healthy application.';
+                data.deploymentFinishedAt=now;
+              }
+            }else{
+              data.logs=`Health check passed: HTTP ${health.status} in ${health.latencyMs}ms.`;
+              data.buildFinishedAt=data.buildFinishedAt||now;
+              data.deploymentStartedAt=data.deploymentStartedAt||now;
+              data.deploymentFinishedAt=now;
+            }
+          }else{
+            data.buildFinishedAt=data.buildFinishedAt||now;
+            data.deploymentStartedAt=data.deploymentStartedAt||now;
+            data.deploymentFinishedAt=now;
+          }
         }
-        if(['FAILED','BUILD_FAILED'].includes(status))data.errorMessage=pd.logs||'Deployment failed';
+        if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){
+          if(!data.buildFinishedAt)data.buildFinishedAt=now;
+          if(!data.deploymentFinishedAt)data.deploymentFinishedAt=now;
+        }
+        if(['FAILED','BUILD_FAILED'].includes(status)&&!data.errorMessage)data.errorMessage=pd.logs||'Deployment failed';
         await db.deployment.update({where:{id:deployment.id},data});
         const latest=await db.deployment.findFirst({where:{applicationId:deployment.applicationId},orderBy:{createdAt:'desc'}});
         if(latest?.id===deployment.id){
@@ -58,9 +80,7 @@ export async function POST(req:Request){
           }
         }
         reconciled++;
-      }catch(e){
-        await db.deployment.update({where:{id:deployment.id},data:{errorMessage:e instanceof Error?e.message:'Reconciliation failed'}});
-      }
+      }catch(e){await db.deployment.update({where:{id:deployment.id},data:{errorMessage:e instanceof Error?e.message:'Reconciliation failed'}});}
     }
     return NextResponse.json({ok:true,checked:pending.length,reconciled});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Reconciliation failed'},{status:500});}
