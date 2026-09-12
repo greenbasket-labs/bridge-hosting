@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { HostingProvider, ProviderAppConfig } from './types';
 export class LocalProvider implements HostingProvider {
- async createApplication(config:ProviderAppConfig){const id=`local_${crypto.randomUUID()}`;return {resourceId:id,internalUrl:`${config.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.local.bridge`};}
+ async createApplication(config:ProviderAppConfig){const id=`local_${crypto.randomUUID()}`;const slug=config.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'app';return {resourceId:id,internalUrl:`${slug}-${id.slice(-12)}.local.bridge`};}
  async deploy(resourceId:string){return {id:`dep_${crypto.randomUUID()}`,status:'SUCCESS',logs:`Local deployment completed for ${resourceId}`};}
  async stop(){return;} async start(){return;} async restart(){return;} async delete(){return;}
  async getStatus(){return 'LIVE';}
