@@ -148,17 +148,18 @@ Goal: protect customer applications and make recovery practical.
 - [x] Provider backup capability boundary
 - [x] Render Postgres export backup capability
 - [x] Render backup export status lookup
+- [x] Manual backup creation
+- [x] Backup record listing/status tracking
 - [ ] Automated backup scheduling
 - [ ] Backup storage abstraction
 - [ ] Backup retention enforcement
 - [ ] Backup integrity checks
-- [ ] Manual backup creation
 - [ ] Restore workflow
 - [ ] Restore verification
 - [ ] Recovery history
 - [ ] Customer backup controls
 
-Render backup operations require a **Postgres resource ID** and are deliberately separate from the web-service resource ID. Render supports Postgres exports and provides export download URLs once available. citeturn0search0turn0search3
+The manual backup API is customer-scoped and requires an application's configured **database resource ID**. It creates a Bridge `Backup` record, calls the selected provider's backup capability, stores the provider backup ID in `storageRef`, and records success/failure in the audit log. Render backup operations require a **Postgres resource ID** and are deliberately separate from the web-service resource ID. Render supports Postgres exports and provides export download URLs once available.
 
 ## Phase 6 — Billing & Plans
 
@@ -300,6 +301,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **provider backup boundary plus real Render Postgres export creation/status support.**
+Completed: **authenticated manual backup creation and backup listing/status tracking, connected to the provider backup capability.**
 
-Next task: **connect that capability to Bridge's Backup records with a small, authenticated manual-backup flow.**
+Next task: **add the smallest useful automated backup scheduling path.**
