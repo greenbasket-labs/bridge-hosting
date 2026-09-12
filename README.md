@@ -226,7 +226,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [x] Deployment operations dashboard
 - [x] Failed deployment queue
 - [x] Health/outage dashboard
-- [ ] Usage overview
+- [x] Usage overview
 - [ ] Resource capacity overview
 - [ ] Provider configuration management
 - [ ] Audit log viewer
@@ -234,7 +234,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [ ] Manual intervention controls
 - [ ] Operational alerts
 
-The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers. The deployment operations dashboard provides a compact read-only view of the latest 100 deployments, active deployment count, failed deployment count, commit, retry count, customer, application, and timestamps. The failed deployment queue focuses on `FAILED` and `BUILD_FAILED` deployments, showing the recorded error, retry count, commit, customer, application, and creation time without adding operator actions yet. The health/outage dashboard provides a read-only view of offline, checking, and failed applications with health-check status, last check time, and recorded health errors.
+The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers. The deployment operations dashboard provides a compact read-only view of the latest 100 deployments, active deployment count, failed deployment count, commit, retry count, customer, application, and timestamps. The failed deployment queue focuses on `FAILED` and `BUILD_FAILED` deployments, showing the recorded error, retry count, commit, customer, application, and creation time without adding operator actions yet. The health/outage dashboard provides a read-only view of offline, checking, and failed applications with health-check status, last check time, and recorded health errors. The usage overview provides the latest collected CPU, RAM, storage, request, and concurrent-user usage for up to 100 applications alongside their plan limits and usage percentages, with a simple 80%+ attention count.
 
 ## Phase 9 — Security & Production Hardening
 
@@ -316,6 +316,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 8 — Admin & Operations**
 
-Completed: **customer administration, application administration, provider resource view, deployment operations dashboard, failed deployment queue, and health/outage dashboard.**
+Completed: **customer administration, application administration, provider resource view, deployment operations dashboard, failed deployment queue, health/outage dashboard, and usage overview.**
 
-Next task: **usage overview — give operators a compact view of resource consumption and plan usage across applications.**
+Next task: **resource capacity overview — give operators a compact view of aggregate provider/resource capacity and current allocation.**
