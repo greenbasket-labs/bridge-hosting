@@ -18,7 +18,16 @@ export async function POST(req:Request){
     const target=app.internalDomain;
     const verificationToken=`bridge-verify=${crypto.randomUUID().replaceAll('-','')}`;
     const domain=await db.domain.create({data:{applicationId:app.id,hostname:b.hostname,status:'DNS_PENDING',verificationToken,target}});
-    return NextResponse.json({domain,dns:{type:'CNAME',name:b.hostname,target},instructions:[`Create a CNAME record for ${b.hostname} pointing to ${target}.`,`If your DNS provider does not allow a CNAME at the root domain, use the DNS provider's ALIAS/ANAME equivalent or connect a subdomain.`,`Allow DNS changes to propagate, then call POST /api/domains/${domain.id}/verify.`]},verification:{token:verificationToken}},{status:201});
+    return NextResponse.json({
+      domain,
+      dns:{type:'CNAME',name:b.hostname,target},
+      instructions:[
+        `Create a CNAME record for ${b.hostname} pointing to ${target}.`,
+        `If your DNS provider does not allow a CNAME at the root domain, use the DNS provider's ALIAS/ANAME equivalent or connect a subdomain.`,
+        `Allow DNS changes to propagate, then call POST /api/domains/${domain.id}/verify.`
+      ],
+      verification:{token:verificationToken}
+    },{status:201});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Invalid request'},{status:400});}
 }
 
