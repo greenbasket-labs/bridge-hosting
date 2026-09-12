@@ -140,10 +140,13 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 
 ## Phase 5 — Backups & Recovery
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: protect customer applications and make recovery practical.
 
+- [x] Existing backup data model
+- [x] Provider backup capability boundary
+- [ ] Real provider backup implementation
 - [ ] Automated backup scheduling
 - [ ] Backup storage abstraction
 - [ ] Backup retention enforcement
@@ -154,6 +157,8 @@ Goal: protect customer applications and make recovery practical.
 - [ ] Restore verification
 - [ ] Recovery history
 - [ ] Customer backup controls
+
+The provider boundary is intentionally optional: providers that do not offer a real backup/restore mechanism are not treated as supporting backups.
 
 ## Phase 6 — Billing & Plans
 
@@ -293,8 +298,8 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 4 — Real Usage & Resource Control**
+**Phase 5 — Backups & Recovery**
 
-Completed: **provider usage collection, real Render metrics, plan-relative percentages for supported metrics, soft warnings, and hard protection for supported limits.**
+Completed: **the provider backup capability boundary is now defined without claiming unsupported providers can create or restore backups.**
 
-Next task: **move to Phase 5 — Backups & Recovery.**
+Next task: **implement the first real provider backup capability only where the provider supports a genuine recoverable backup.**
