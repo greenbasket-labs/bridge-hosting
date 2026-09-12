@@ -23,12 +23,14 @@ export async function POST(req:Request){
     const d=await db.deployment.create({data:{applicationId:app.id,branch:b.branch,status:'QUEUED',buildStartedAt:new Date(),commitMessage:'Initial deployment'}});
     try{
       const dep=await provider.deploy(resource.resourceId);
-      await db.deployment.update({where:{id:d.id},data:{providerDeploymentId:dep.id,status:'QUEUED'}});
+      const success=dep.status==='SUCCESS';
+      await db.deployment.update({where:{id:d.id},data:{providerDeploymentId:dep.id,status:success?'SUCCESS':'QUEUED',logs:dep.logs||null,buildFinishedAt:success?new Date():null}});
+      if(success)await db.application.update({where:{id:app.id},data:{status:'LIVE',deploymentStatus:'SUCCESS',availabilityStatus:'ONLINE'}});
     }catch(e){
       await db.deployment.update({where:{id:d.id},data:{status:'FAILED',errorMessage:e instanceof Error?e.message:'Deployment failed',buildFinishedAt:new Date()}});
       await db.application.update({where:{id:app.id},data:{status:'FAILED',deploymentStatus:'FAILED'}});
       return NextResponse.json({id:app.id,deploymentId:d.id},{status:202});
     }
-    return NextResponse.json({id:app.id,deploymentId:d.id,status:'QUEUED'},{status:202});
+    return NextResponse.json({id:app.id,deploymentId:d.id,status:'SUCCESS'},{status:202});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Invalid request'},{status:400});}
 }
