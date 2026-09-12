@@ -7,12 +7,21 @@ const MAX_RETRIES=Number(process.env.DEPLOYMENT_MAX_RETRIES||2);
 
 function authorized(req:Request){const secret=process.env.INTERNAL_CRON_SECRET;return Boolean(secret&&req.headers.get('x-bridge-cron-secret')===secret);}
 function normalizeStatus(status:string){const s=status.toUpperCase();if(['SUCCESS','SUCCEEDED','LIVE','COMPLETED'].includes(s))return 'SUCCESS' as const;if(['BUILD_FAILED','BUILD_ERROR'].includes(s))return 'BUILD_FAILED' as const;if(['FAILED','ERROR','UPDATE_FAILED'].includes(s))return 'FAILED' as const;if(['DEPLOYING','DEPLOYED','UPDATE_IN_PROGRESS'].includes(s))return 'DEPLOYING' as const;if(['HEALTH_CHECK','HEALTHCHECK'].includes(s))return 'HEALTH_CHECK' as const;if(['BUILDING','BUILD','IN_PROGRESS','BUILD_IN_PROGRESS'].includes(s))return 'BUILDING' as const;if(['CANCELLED','CANCELED'].includes(s))return 'CANCELLED' as const;return 'QUEUED' as const;}
+function healthUrl(application:{internalDomain:string;healthCheckPath:string}){const base=application.internalDomain;try{return new URL(application.healthCheckPath||'/',base).toString();}catch{return base;}}
+
+async function recordHealth(applicationId:string,application:{internalDomain:string;healthCheckPath:string}){
+  const url=healthUrl(application);
+  if(!/^https?:\/\//i.test(url))return null;
+  const health=await checkApplicationHealth(url);
+  await db.application.update({where:{id:applicationId},data:{availabilityStatus:health.healthy?'ONLINE':'OFFLINE',healthCheckedAt:new Date(),healthCheckStatus:health.status,healthCheckLatencyMs:health.latencyMs,healthCheckError:health.healthy?null:health.error||'Application health check failed'}});
+  return health;
+}
 
 export async function POST(req:Request){
   if(!authorized(req))return NextResponse.json({error:'Unauthorized'},{status:401});
   try{
     const pending=await db.deployment.findMany({where:{status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},providerDeploymentId:{not:null}},include:{application:true},orderBy:{createdAt:'asc'},take:25});
-    const provider=getProvider();let reconciled=0,retried=0;
+    const provider=getProvider();let reconciled=0,retried=0,healthChecked=0;
     for(const deployment of pending){
       if(!deployment.application.providerResourceId)continue;
       try{
@@ -22,34 +31,39 @@ export async function POST(req:Request){
         if(status==='BUILDING'&&!deployment.buildStartedAt)data.buildStartedAt=now;
         if(['DEPLOYING','HEALTH_CHECK'].includes(status)){if(!deployment.buildFinishedAt)data.buildFinishedAt=now;if(!deployment.deploymentStartedAt)data.deploymentStartedAt=now;}
         if(status==='SUCCESS'){
-          const url=deployment.application.internalDomain;
-          if(/^https?:\/\//i.test(url)){
-            const health=await checkApplicationHealth(url);
-            if(!health.healthy){status='HEALTH_CHECK';data.status='HEALTH_CHECK';data.logs=`Provider deployment succeeded, but application health check failed (${health.error||`HTTP ${health.status}`}).`;if(Date.now()-deployment.createdAt.getTime()>15*60*1000){status='FAILED';data.status='FAILED';data.errorMessage='Deployment timed out waiting for a healthy application.';data.deploymentFinishedAt=now;}}
-            else{data.logs=`Health check passed: HTTP ${health.status} in ${health.latencyMs}ms.`;data.buildFinishedAt=data.buildFinishedAt||now;data.deploymentStartedAt=data.deploymentStartedAt||now;data.deploymentFinishedAt=now;}
-          }else{data.buildFinishedAt=data.buildFinishedAt||now;data.deploymentStartedAt=data.deploymentStartedAt||now;data.deploymentFinishedAt=now;}
+          await db.application.update({where:{id:deployment.applicationId},data:{availabilityStatus:'CHECKING'}});
+          const health=await recordHealth(deployment.applicationId,deployment.application);
+          healthChecked++;
+          if(health&&!health.healthy){status='HEALTH_CHECK';data.status='HEALTH_CHECK';data.logs=`Provider deployment succeeded, but application health check failed (${health.error||`HTTP ${health.status}`}).`;if(Date.now()-deployment.createdAt.getTime()>15*60*1000){status='FAILED';data.status='FAILED';data.errorMessage='Deployment timed out waiting for a healthy application.';data.deploymentFinishedAt=now;}}
+          else{data.logs=`Health check passed: HTTP ${health?.status} in ${health?.latencyMs}ms.`;data.buildFinishedAt=data.buildFinishedAt||now;data.deploymentStartedAt=data.deploymentStartedAt||now;data.deploymentFinishedAt=now;}
         }
         if(status==='FAILED'&&deployment.retryCount<MAX_RETRIES){
           const latest=await db.deployment.findFirst({where:{applicationId:deployment.applicationId},orderBy:{createdAt:'desc'}});
           if(latest?.id===deployment.id){
             const retry=await provider.deploy(deployment.application.providerResourceId,deployment.commitSha||undefined);
             await db.deployment.update({where:{id:deployment.id},data:{providerDeploymentId:retry.id,status:'QUEUED',retryCount:{increment:1},lastRetryAt:now,errorMessage:null,logs:`Retry ${deployment.retryCount+1}/${MAX_RETRIES} started after provider failure. ${pd.logs||''}`.trim(),buildStartedAt:null,buildFinishedAt:null,deploymentStartedAt:null,deploymentFinishedAt:null}});
-            await db.application.update({where:{id:deployment.applicationId},data:{status:'DEPLOYING',deploymentStatus:'QUEUED'}});
+            await db.application.update({where:{id:deployment.applicationId},data:{status:'DEPLOYING',deploymentStatus:'QUEUED',availabilityStatus:'CHECKING'}});
             retried++;reconciled++;continue;
           }
         }
-        if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){if(!data.buildFinishedAt)data.buildFinishedAt=now;if(!data.deploymentFinishedAt)data.deploymentFinishedAt=now;}
+        if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){if(!data.buildFinishedAt)data.buildFinishedAt=now;if(!data.deploymentFinishedAt)data.deploymentFinishedAt=now;await db.application.update({where:{id:deployment.applicationId},data:{availabilityStatus:'UNKNOWN',healthCheckError:status==='CANCELLED'?'Deployment cancelled':undefined}});}
         if(['FAILED','BUILD_FAILED'].includes(status)&&!data.errorMessage)data.errorMessage=pd.logs||'Deployment failed';
         await db.deployment.update({where:{id:deployment.id},data});
         const latest=await db.deployment.findFirst({where:{applicationId:deployment.applicationId},orderBy:{createdAt:'desc'}});
         if(latest?.id===deployment.id){
-          if(status==='SUCCESS')await db.application.update({where:{id:deployment.applicationId},data:{status:'LIVE',deploymentStatus:'SUCCESS'}});
-          else if(['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK'].includes(status))await db.application.update({where:{id:deployment.applicationId},data:{status:'DEPLOYING',deploymentStatus:status}});
-          else if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){const previousSuccess=await db.deployment.findFirst({where:{applicationId:deployment.applicationId,status:'SUCCESS',id:{not:deployment.id}},orderBy:{createdAt:'desc'}});await db.application.update({where:{id:deployment.applicationId},data:{status:previousSuccess?'LIVE':'FAILED',deploymentStatus:status}});}
+          if(status==='SUCCESS')await db.application.update({where:{id:deployment.applicationId},data:{status:'LIVE',deploymentStatus:'SUCCESS',availabilityStatus:'ONLINE'}});
+          else if(['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK'].includes(status))await db.application.update({where:{id:deployment.applicationId},data:{status:'DEPLOYING',deploymentStatus:status,availabilityStatus:'CHECKING'}});
+          else if(['FAILED','BUILD_FAILED','CANCELLED'].includes(status)){const previousSuccess=await db.deployment.findFirst({where:{applicationId:deployment.applicationId,status:'SUCCESS',id:{not:deployment.id}},orderBy:{createdAt:'desc'}});await db.application.update({where:{id:deployment.applicationId},data:{status:previousSuccess?'LIVE':'FAILED',deploymentStatus:status,availabilityStatus:previousSuccess?'UNKNOWN':'OFFLINE'}});}
         }
         reconciled++;
       }catch(e){await db.deployment.update({where:{id:deployment.id},data:{errorMessage:e instanceof Error?e.message:'Reconciliation failed'}});}
     }
-    return NextResponse.json({ok:true,checked:pending.length,reconciled,retried,maxRetries:MAX_RETRIES});
+
+    const liveApps=await db.application.findMany({where:{status:'LIVE'},select:{id:true,internalDomain:true,healthCheckPath:true},take:100});
+    for(const app of liveApps){
+      if(pending.some(d=>d.applicationId===app.id))continue;
+      try{await db.application.update({where:{id:app.id},data:{availabilityStatus:'CHECKING'}});await recordHealth(app.id,app);healthChecked++;}catch(e){await db.application.update({where:{id:app.id},data:{availabilityStatus:'OFFLINE',healthCheckedAt:new Date(),healthCheckError:e instanceof Error?e.message:'Health check failed'}});}}
+
+    return NextResponse.json({ok:true,checked:pending.length,reconciled,retried,healthChecked,maxRetries:MAX_RETRIES});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Reconciliation failed'},{status:500});}
 }
