@@ -172,12 +172,13 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [x] Billing transaction persistence
 - [x] Paystack payment initialization
 - [x] Paystack payment verification
+- [x] Signed Paystack webhook handling
 - [ ] Production payment provider integration hardening
 - [ ] Subscription lifecycle
-- [ ] Payment webhooks
+- [ ] Payment webhooks for recurring lifecycle events
 - [ ] Failed-payment handling
 - [ ] Trial handling
-- [ ] Monthly/yearly billing
+- [x] Monthly/yearly billing period activation
 - [ ] Upgrade flow
 - [ ] Downgrade flow
 - [ ] Custom plans
@@ -185,7 +186,7 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 - [ ] Usage-to-plan enforcement
 - [ ] Billing notifications
 
-The first billing slice persists each payment reference, initializes a server-side Paystack checkout, and verifies the amount, currency, and reference before activating the application's subscription period. Recurring billing and webhooks remain intentionally separate follow-up work.
+The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook fulfillment is idempotent and activates the application's monthly or yearly subscription period. Browser verification remains available as a fallback.
 
 ## Phase 7 — Customer Experience
 
@@ -308,6 +309,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 6 — Billing & Plans**
 
-Completed: **billing transaction persistence plus secure Paystack checkout initialization and server-side payment verification.**
+Completed: **billing transaction persistence, Paystack checkout initialization, server-side verification, signed webhook confirmation, amount/currency validation, idempotent payment fulfillment, and monthly/yearly subscription period activation.**
 
-Next task: **payment webhook handling — make successful/failed payment state reliable even when the customer does not return to Bridge.**
+Next task: **small subscription lifecycle slice — handle recurring billing state changes and failed payments without building the full billing system yet.**
