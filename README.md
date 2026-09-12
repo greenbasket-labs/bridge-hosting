@@ -150,7 +150,7 @@ Goal: protect customer applications and make recovery practical.
 - [x] Render backup export status lookup
 - [x] Manual backup creation
 - [x] Backup record listing/status tracking
-- [ ] Automated backup scheduling
+- [x] Automated backup scheduling
 - [ ] Backup storage abstraction
 - [ ] Backup retention enforcement
 - [ ] Backup integrity checks
@@ -159,7 +159,7 @@ Goal: protect customer applications and make recovery practical.
 - [ ] Recovery history
 - [ ] Customer backup controls
 
-The manual backup API is customer-scoped and requires an application's configured **database resource ID**. It creates a Bridge `Backup` record, calls the selected provider's backup capability, stores the provider backup ID in `storageRef`, and records success/failure in the audit log. Render backup operations require a **Postgres resource ID** and are deliberately separate from the web-service resource ID. Render supports Postgres exports and provides export download URLs once available.
+Automated backups run once per day for live applications whose plan has `backupRetentionDays > 0` and whose database resource is configured. The job skips applications that already have a backup from the previous 24 hours, uses the selected provider's backup capability, and records scheduled backup success/failure in Bridge's audit log. Render backup operations require a **Postgres resource ID** and remain separate from the web-service resource ID.
 
 ## Phase 6 — Billing & Plans
 
@@ -301,6 +301,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **authenticated manual backup creation and backup listing/status tracking, connected to the provider backup capability.**
+Completed: **automated daily backup scheduling for eligible live applications, with duplicate prevention and audit logging.**
 
-Next task: **add the smallest useful automated backup scheduling path.**
+Next task: **add the smallest useful backup retention enforcement.**
