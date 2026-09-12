@@ -30,8 +30,14 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   try{
     const providerBackup=await provider.createBackup(app.databaseResourceId);
     const completed=providerBackup.status==='COMPLETED';
+    let integrityVerified=false;
+    if(completed&&provider.getBackupStatus){
+      const verified=await provider.getBackupStatus(app.databaseResourceId,providerBackup.id);
+      if(verified.id!==providerBackup.id||verified.status!=='COMPLETED')throw new Error('Backup integrity verification failed');
+      integrityVerified=true;
+    }
     const updated=await db.backup.update({where:{id:backup.id},data:{status:completed?'COMPLETED':'PENDING',storageRef:providerBackup.id,completedAt:completed?new Date(providerBackup.createdAt??Date.now()):null,sizeBytes:providerBackup.sizeBytes??null}});
-    await db.auditLog.create({data:{userId:user.id,action:'BACKUP_CREATED',entityType:'Backup',entityId:updated.id,metadata:{applicationId:id,provider:app.provider,providerBackupId:providerBackup.id,status:updated.status}}});
+    await db.auditLog.create({data:{userId:user.id,action:'BACKUP_CREATED',entityType:'Backup',entityId:updated.id,metadata:{applicationId:id,provider:app.provider,providerBackupId:providerBackup.id,status:updated.status,integrityVerified}}});
     return NextResponse.json({backup:serializeBackup(updated)},{status:202});
   }catch(e){
     const message=e instanceof Error?e.message:'Backup creation failed';
