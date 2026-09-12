@@ -125,11 +125,13 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 - [x] Render persistent-storage monitoring
 - [ ] Bandwidth monitoring
 - [x] Render request monitoring
+- [x] Plan-relative request usage percentage
+- [x] Plan-relative concurrent-user usage percentage
 - [ ] Concurrent-user monitoring where supported
 - [ ] Database usage monitoring
 - [ ] File-storage monitoring
 - [x] Usage history data capture
-- [ ] Usage percentage against plan
+- [x] Usage percentage against plan for supported metrics
 - [ ] Soft usage warnings
 - [ ] Hard usage protection
 - [ ] Resource overage policy
@@ -293,6 +295,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 4 — Real Usage & Resource Control**
 
-Completed: **provider usage collection plus real Render CPU, RAM, persistent-storage, and request metrics.**
+Completed: **provider usage collection, real Render metrics, and plan-relative percentages for supported request/concurrent-user metrics.**
 
-Next task: **keep the usage layer small: add plan-relative usage percentages for the metrics Bridge can reliably compare to plan limits.**
+Next task: **soft usage warnings — no automatic suspension or billing overages yet.**
