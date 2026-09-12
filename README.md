@@ -75,7 +75,7 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 - [x] Coalesce superseded deployments
 - [x] Add deployment timeout handling
 - [x] Add deployment retry policy
-- [ ] Add deployment cancellation
+- [x] Add deployment cancellation
 - [ ] Improve deployment logs and customer-facing error messages
 
 ## Phase 2 — Application Health & Availability
@@ -291,4 +291,4 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 1 — Reliable Deployment Engine**
 
-Next task: **deployment cancellation and better customer-facing deployment states/logs.**
+Next task: **improve deployment logs and customer-facing deployment states, then begin Domains + HTTPS.**
