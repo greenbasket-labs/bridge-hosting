@@ -56,41 +56,56 @@ export async function POST(req:Request){
 
     if(name==='subscription.create'){
       const code=String(data?.subscription_code||data?.subscription?.subscription_code||'');
-      if(!code)return NextResponse.json({ok:true,ignored:true});
+      const email=String(data?.customer?.email||'').toLowerCase();
       const planCode=String(data?.plan?.plan_code||data?.plan?.code||'');
-      const sub=await db.subscription.findFirst({where:{paystackSubscriptionCode:null,plan:{paystackPlanCode:planCode||undefined}},orderBy:{createdAt:'desc'}});
+      if(!code||!email||!planCode)return NextResponse.json({ok:true,ignored:true});
+      const sub=await db.subscription.findFirst({
+        where:{paystackSubscriptionCode:null,plan:{paystackPlanCode:planCode},customer:{user:{email}}},
+        orderBy:{createdAt:'desc'},
+        include:{customer:{include:{user:true}}}
+      });
       if(!sub)return NextResponse.json({ok:true,ignored:true});
       await db.subscription.update({where:{id:sub.id},data:{paystackSubscriptionCode:code,status:'ACTIVE'}});
-      await db.auditLog.create({data:{userId:sub.customerId,action:'BILLING_SUBSCRIPTION_CREATED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
+      await db.auditLog.create({data:{userId:sub.customer.userId,action:'BILLING_SUBSCRIPTION_CREATED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
       return NextResponse.json({ok:true,processed:true});
     }
 
+    const code=String(data?.subscription?.subscription_code||data?.subscription_code||'');
     if(name==='invoice.payment_failed'){
-      const code=String(data?.subscription?.subscription_code||data?.subscription_code||'');
       if(!code)return NextResponse.json({ok:true,ignored:true});
-      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code}});
+      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code},include:{customer:{include:{user:true}}}});
       if(!sub)return NextResponse.json({ok:true,ignored:true});
       await db.subscription.update({where:{id:sub.id},data:{status:'PAST_DUE'}});
-      await db.auditLog.create({data:{action:'BILLING_RECURRING_PAYMENT_FAILED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
+      await db.auditLog.create({data:{userId:sub.customer.userId,action:'BILLING_RECURRING_PAYMENT_FAILED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
+      return NextResponse.json({ok:true,processed:true});
+    }
+
+    if(name==='invoice.update'){
+      if(!code)return NextResponse.json({ok:true,ignored:true});
+      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code},include:{customer:{include:{user:true}}}});
+      if(!sub)return NextResponse.json({ok:true,ignored:true});
+      if(data?.status==='success'&&data?.paid===true){
+        const periodEnd=data?.period_end?new Date(data.period_end):null;
+        await db.subscription.update({where:{id:sub.id},data:{status:'ACTIVE',...(periodEnd&&!Number.isNaN(periodEnd.getTime())?{currentPeriodEnd:periodEnd}:{})}});
+        await db.auditLog.create({data:{userId:sub.customer.userId,action:'BILLING_RECURRING_PAYMENT_CONFIRMED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code,invoiceCode:data?.invoice_code||null}}});
+      }
       return NextResponse.json({ok:true,processed:true});
     }
 
     if(name==='subscription.not_renew'){
-      const code=String(data?.subscription_code||data?.subscription?.subscription_code||'');
       if(!code)return NextResponse.json({ok:true,ignored:true});
-      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code}});
+      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code},include:{customer:{include:{user:true}}}});
       if(!sub)return NextResponse.json({ok:true,ignored:true});
-      await db.auditLog.create({data:{action:'BILLING_SUBSCRIPTION_NOT_RENEWING',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
+      await db.auditLog.create({data:{userId:sub.customer.userId,action:'BILLING_SUBSCRIPTION_NOT_RENEWING',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
       return NextResponse.json({ok:true,processed:true});
     }
 
     if(name==='subscription.disable'){
-      const code=String(data?.subscription_code||data?.subscription?.subscription_code||'');
       if(!code)return NextResponse.json({ok:true,ignored:true});
-      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code}});
+      const sub=await db.subscription.findUnique({where:{paystackSubscriptionCode:code},include:{customer:{include:{user:true}}}});
       if(!sub)return NextResponse.json({ok:true,ignored:true});
       await db.subscription.update({where:{id:sub.id},data:{status:'CANCELLED'}});
-      await db.auditLog.create({data:{action:'BILLING_SUBSCRIPTION_DISABLED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
+      await db.auditLog.create({data:{userId:sub.customer.userId,action:'BILLING_SUBSCRIPTION_DISABLED',entityType:'Subscription',entityId:sub.id,metadata:{paystackSubscriptionCode:code}}});
       return NextResponse.json({ok:true,processed:true});
     }
 
