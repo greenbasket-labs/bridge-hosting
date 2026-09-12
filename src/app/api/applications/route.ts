@@ -24,7 +24,7 @@ export async function POST(req:Request){
     try{
       const dep=await provider.deploy(resource.resourceId);
       const success=dep.status==='SUCCESS';
-      await db.deployment.update({where:{id:d.id},data:{providerDeploymentId:dep.id,status:success?'SUCCESS':'QUEUED',logs:dep.logs||null,buildFinishedAt:success?new Date():null}});
+      await db.deployment.update({where:{id:d.id},data:{providerDeploymentId:dep.id,status:success?'SUCCESS':'QUEUED',logs:dep.logs||undefined,buildFinishedAt:success?new Date():undefined}});
       if(success)await db.application.update({where:{id:app.id},data:{status:'LIVE',deploymentStatus:'SUCCESS',availabilityStatus:'ONLINE'}});
     }catch(e){
       await db.deployment.update({where:{id:d.id},data:{status:'FAILED',errorMessage:e instanceof Error?e.message:'Deployment failed',buildFinishedAt:new Date()}});
