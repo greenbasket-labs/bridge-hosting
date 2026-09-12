@@ -3,7 +3,7 @@ services:
     name: bridge-hosting
     runtime: node
     plan: starter
-    buildCommand: npm ci && npx prisma generate && npx prisma db push && npm run build
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -20,4 +20,18 @@ services:
       - key: GITHUB_CLIENT_SECRET
         sync: false
       - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: INTERNAL_CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: bridge-reconcile
+    runtime: node
+    schedule: "*/5 * * * *"
+    buildCommand: npm ci
+    startCommand: node scripts/reconcile.mjs
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: INTERNAL_CRON_SECRET
         sync: false
