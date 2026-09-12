@@ -221,7 +221,7 @@ The customer experience now adapts its navigation, cards, forms, action buttons,
 Goal: give Bridge operators the tools needed to operate many customers safely.
 
 - [x] Customer administration
-- [ ] Application administration
+- [x] Application administration
 - [ ] Provider resource view
 - [ ] Deployment operations dashboard
 - [ ] Failed deployment queue
@@ -234,7 +234,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [ ] Manual intervention controls
 - [ ] Operational alerts
 
-The first admin operations screen is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with name, email, application count, live application count, latest plan, and join date. No destructive customer controls or new customer-management persistence were added.
+The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration now provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. No destructive controls or new persistence models were added.
 
 ## Phase 9 — Security & Production Hardening
 
@@ -316,6 +316,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 8 — Admin & Operations**
 
-Completed: **customer administration.**
+Completed: **customer administration and application administration.**
 
-Next task: **application administration — give Bridge operators a simple read-only view of customer applications and their operational state.**
+Next task: **provider resource view — show the underlying provider/resource identifiers and provider status to Bridge operators without exposing provider controls to customers.**
