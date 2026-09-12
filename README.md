@@ -140,7 +140,7 @@ Goal: measure actual resource consumption and enforce fair plan limits.
 
 ## Phase 5 — Backups & Recovery
 
-**Status: 🟡 In progress**
+**Status: 🟢 Completed**
 
 Goal: protect customer applications and make recovery practical.
 
@@ -157,9 +157,11 @@ Goal: protect customer applications and make recovery practical.
 - [x] Safe Render PITR recovery initiation
 - [x] Recovery verification endpoint
 - [x] Recovery history
-- [ ] Customer backup controls
+- [x] Customer backup controls
 
 Recovery history reuses the existing audit log rather than adding another persistence model. The customer-scoped history endpoint returns the latest 50 recovery lifecycle events for the application, including started, verified, not-ready, and failed attempts.
+
+Customer backup controls now expose the existing safe operations on the application page: create a backup, view recent backup status, start an isolated point-in-time recovery, and review recovery history. Production database cutover remains deliberately manual.
 
 ## Phase 6 — Billing & Plans
 
@@ -182,21 +184,21 @@ Goal: connect Bridge plans to real customer billing and resource economics.
 
 ## Phase 7 — Customer Experience
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: make infrastructure feel simple to a non-technical customer.
 
 - [ ] Customer dashboard
-- [ ] Application overview
+- [x] Application overview
 - [ ] Clear Online/Offline/Updating states
-- [ ] Deployment history UI
+- [x] Deployment history UI
 - [ ] Deployment logs UI
-- [ ] One-click redeploy
-- [ ] One-click rollback
+- [x] One-click redeploy
+- [x] One-click rollback
 - [x] Domain management UI
 - [ ] Usage dashboard
 - [ ] Plan management
-- [ ] Backup management
+- [x] Backup management
 - [ ] Notifications center
 - [ ] Customer support/contact flow
 - [ ] Mobile-friendly experience
@@ -299,8 +301,8 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 5 — Backups & Recovery**
+**Phase 6 — Billing & Plans**
 
-Completed: **automated daily backups, plan-based retention, provider integrity verification, safe Render PITR recovery initiation, recovery readiness verification, and auditable recovery history.**
+Phase 5 is complete: **automated daily backups, plan-based retention, provider integrity verification, safe Render PITR recovery initiation, recovery readiness verification, auditable recovery history, and customer backup controls.**
 
-Next task: **customer backup controls — expose the existing safe backup/recovery operations without adding unnecessary infrastructure.**
+Next task: **production billing foundation — connect plans/subscriptions to a real payment provider without building a full billing system at once.**
