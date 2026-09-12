@@ -222,7 +222,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 
 - [x] Customer administration
 - [x] Application administration
-- [ ] Provider resource view
+- [x] Provider resource view
 - [ ] Deployment operations dashboard
 - [ ] Failed deployment queue
 - [ ] Health/outage dashboard
@@ -234,7 +234,7 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [ ] Manual intervention controls
 - [ ] Operational alerts
 
-The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration now provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. No destructive controls or new persistence models were added.
+The admin operations area is protected by the existing `ADMIN` role. Customer administration provides a simple read-only view of up to 100 newest customer accounts with basic account and application counts. Application administration provides a read-only view of up to 100 recently updated applications, including customer, Bridge status, availability, domain, plan, and last update time. The provider resource view adds the configured provider name, application provider resource ID, and live provider-reported status for operators. Provider calls are read-only and failures are shown as `UNAVAILABLE`; no provider controls are exposed to customers.
 
 ## Phase 9 — Security & Production Hardening
 
@@ -316,6 +316,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 8 — Admin & Operations**
 
-Completed: **customer administration and application administration.**
+Completed: **customer administration, application administration, and provider resource view.**
 
-Next task: **provider resource view — show the underlying provider/resource identifiers and provider status to Bridge operators without exposing provider controls to customers.**
+Next task: **deployment operations dashboard — give Bridge operators a compact view of active, failed, and recent deployments.**
