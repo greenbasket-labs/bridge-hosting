@@ -16,8 +16,12 @@ export async function POST(req:Request){
     const apps=await db.application.findMany({where:{repository:repo,branch}});let created=0;
     for(const app of apps){
       if(!app.providerResourceId)continue;
+      const latest=await db.deployment.findFirst({where:{applicationId:app.id},orderBy:{createdAt:'desc'}});
+      if(latest?.commitSha===sha&&['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK','SUCCESS'].includes(latest.status))continue;
       const active=await db.deployment.findFirst({where:{applicationId:app.id,status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']}},orderBy:{createdAt:'desc'}});
-      if(active?.commitSha===sha)continue;
+      if(active){
+        await db.deployment.updateMany({where:{applicationId:app.id,status:{in:['QUEUED','BUILDING','DEPLOYING','HEALTH_CHECK']},id:{not:active.id}},data:{status:'CANCELLED',errorMessage:'Superseded by a newer commit'}});
+      }
       const d=await db.deployment.create({data:{applicationId:app.id,commitSha:sha,branch,commitMessage:p.head_commit?.message||'',status:'QUEUED'}});
       await db.application.update({where:{id:app.id},data:{status:'DEPLOYING',deploymentStatus:'QUEUED'}});
       try{
