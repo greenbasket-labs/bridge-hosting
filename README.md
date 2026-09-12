@@ -151,15 +151,19 @@ Goal: protect customer applications and make recovery practical.
 - [x] Manual backup creation
 - [x] Backup record listing/status tracking
 - [x] Automated backup scheduling
+- [x] Backup retention enforcement
 - [ ] Backup storage abstraction
-- [ ] Backup retention enforcement
 - [ ] Backup integrity checks
 - [ ] Restore workflow
 - [ ] Restore verification
 - [ ] Recovery history
 - [ ] Customer backup controls
 
-Automated backups run once per day for live applications whose plan has `backupRetentionDays > 0` and whose database resource is configured. The job skips applications that already have a backup from the previous 24 hours, uses the selected provider's backup capability, and records scheduled backup success/failure in Bridge's audit log. Render backup operations require a **Postgres resource ID** and remain separate from the web-service resource ID.
+Automated backups run once per day for live applications whose plan has `backupRetentionDays > 0` and whose database resource is configured. The job skips applications that already have a backup from the previous 24 hours, uses the selected provider's backup capability, and records scheduled backup success/failure in Bridge's audit log.
+
+Bridge retention enforcement marks completed or still-pending backup records older than the plan's `backupRetentionDays` as `EXPIRED` and hides them from the customer backup list. This is a **Bridge metadata/visibility retention policy**, not provider-side deletion: Render's logical Postgres exports are retained by Render for seven days, and the current Render API exposes create/list export operations but no export-delete operation. citeturn0search3turn0search4
+
+Render backup operations require a **Postgres resource ID** and remain separate from the web-service resource ID.
 
 ## Phase 6 — Billing & Plans
 
@@ -301,6 +305,6 @@ Each completed development step should update this README so the repository alwa
 
 **Phase 5 — Backups & Recovery**
 
-Completed: **automated daily backup scheduling for eligible live applications, with duplicate prevention and audit logging.**
+Completed: **automated daily backups plus plan-based Bridge retention enforcement with explicit `EXPIRED` state and audit logging.**
 
-Next task: **add the smallest useful backup retention enforcement.**
+Next task: **add the smallest useful backup integrity check.**
