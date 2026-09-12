@@ -192,7 +192,7 @@ The billing foundation persists payment references, initializes server-side Pays
 
 ## Phase 7 — Customer Experience
 
-**Status: 🟡 In progress**
+**Status: 🟢 Completed**
 
 Goal: make infrastructure feel simple to a non-technical customer.
 
@@ -210,13 +210,13 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] Backup management
 - [x] Notifications center
 - [x] Customer support/contact flow
-- [ ] Mobile-friendly experience
+- [x] Mobile-friendly experience
 
-The customer dashboard gives a single application list with human-readable status and plan information. Application pages expose recent deployment logs and a simple usage dashboard showing the latest collected CPU, RAM, storage, bandwidth, request, and concurrent-user measurements. A customer notifications page exposes the latest 50 notifications already recorded by Bridge. A simple support page provides a configured support email and guidance for reporting application or deployment issues, without introducing a ticketing system.
+The customer experience now adapts its navigation, cards, forms, action buttons, typography, and data tables for smaller screens. Wide tables remain horizontally scrollable instead of forcing a desktop layout onto mobile devices. The support page provides a configured support email and guidance for reporting application or deployment issues without introducing a ticketing system.
 
 ## Phase 8 — Admin & Operations
 
-**Status: ⚪ Planned**
+**Status: 🟡 In progress**
 
 Goal: give Bridge operators the tools needed to operate many customers safely.
 
@@ -312,8 +312,6 @@ Each completed development step should update this README so the repository alwa
 
 ## Current milestone
 
-**Phase 7 — Customer Experience**
+**Phase 8 — Admin & Operations**
 
-Completed: **customer application dashboard, application overview, human-readable Online/Offline/Updating states, deployment history UI, deployment logs UI, usage dashboard, redeploy/rollback actions, domain management UI, plan/billing visibility, plan selection/checkout, backup management, notifications center, and customer support/contact flow.**
-
-Next task: **mobile-friendly experience — make the existing customer experience usable on smaller screens without redesigning the application.**
+Next task: **customer administration — give Bridge operators a simple, protected view of customers without building the entire admin system at once.**
