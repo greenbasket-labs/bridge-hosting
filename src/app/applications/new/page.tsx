@@ -1,13 +1,12 @@
 'use client';
 
 import {useEffect,useState} from 'react';
-import {useRouter,useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
 type Repo={name:string;defaultBranch:string;private:boolean;url:string};
 
 export default function NewApplication(){
   const r=useRouter();
-  const params=useSearchParams();
   const [plans,setPlans]=useState<any[]>([]);
   const [repos,setRepos]=useState<Repo[]>([]);
   const [githubConnected,setGithubConnected]=useState(false);
@@ -38,7 +37,7 @@ export default function NewApplication(){
       .catch(()=>{if(!cancelled)setRepoError('Could not load GitHub repositories');})
       .finally(()=>{if(!cancelled)setLoadingRepos(false);});
     return()=>{cancelled=true;};
-  },[params]);
+  },[]);
 
   function set(k:string,v:string){setForm(f=>({...f,[k]:v}))}
 
