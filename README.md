@@ -105,7 +105,7 @@ Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimis
 - [x] Add deployment retry policy
 - [x] Add deployment cancellation
 - [x] Improve deployment logs and customer-facing deployment states
-- [ ] Verify the Render production deployment trigger handles empty/non-JSON provider responses safely
+- [x] Make Render deploy requests tolerate successful empty/non-JSON responses
 - [ ] Complete an end-to-end production deployment verification
 
 ## Phase 2 — Application Health & Availability
@@ -328,7 +328,7 @@ These come after the core hosting product is reliable.
 
 We do **not** jump randomly between features. The active work is driven by the V1 finish line and real test results.
 
-1. **Fix and verify Render production deployment**
+1. **Redeploy Bridge with the Render response fix and retest the existing `bridge-hosting` application**
 2. **Complete launch-critical security hardening**
 3. **Finish the remaining domain/usage/billing controls required for V1**
 4. **Run a real end-to-end production smoke test**
@@ -342,11 +342,13 @@ Future features should not be added simply because they are technically interest
 
 The core control plane, GitHub connection, application creation, provider abstraction, local provider, Render adapter, customer experience, admin operations, health monitoring, backups/recovery foundation, and billing foundation are already implemented.
 
-The current live test has successfully reached the point where Bridge can create a Render-hosted application resource. The first production application test exposed a deployment integration issue: Bridge recorded `Unexpected end of JSON input` after triggering the provider deployment. This is being treated as a deployment-provider response handling bug to fix and verify before declaring the deployment engine production-ready.
+The production deployment investigation identified that the Render adapter must not assume a deployment-trigger response contains JSON. The provider API helper now reads the response body once, accepts an empty successful response, and reports malformed non-empty responses explicitly. The deployment trigger also omits a request body when no commit SHA is supplied, while still sending `commitId` for GitHub push deployments.
+
+The fix is committed to `main` and now needs a fresh Render deployment and an end-to-end verification. Do not mark Phase 1 production-ready until that real verification succeeds.
 
 ### Immediate next task
 
-**Fix the Render deployment response handling, redeploy Bridge, and retest the existing `bridge-hosting` application end-to-end.**
+**Redeploy Bridge from the latest `main` commit, then retest the existing `bridge-hosting` application end-to-end.**
 
 Do not create unnecessary duplicate test applications while the existing production test is available.
 
