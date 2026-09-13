@@ -4,39 +4,55 @@ Bridge is a provider-independent managed application hosting control plane.
 
 ## Product flow
 
-Create account → connect GitHub → configure application → choose plan → deploy → live URL → custom domain → automatic deployments.
+Create account → connect GitHub → configure application → choose Bridge plan → deploy → live URL → custom domain → automatic deployments → billing → monitoring.
 
 ## Product position
 
-Bridge is **not intended to be another Render clone**. The initial focus is simple, transparent, managed hosting for applications built by Green Basket and for Nigerian developers, businesses, schools, and organizations.
+Bridge is **not intended to be another Render clone**. Bridge provides a simple customer-facing hosting experience while infrastructure is supplied by a provider behind the scenes.
 
-Bridge sits above infrastructure providers:
+The initial provider is Render. Bridge owns the customer experience, plans, billing relationship, operational controls, and branding; Render supplies the underlying application infrastructure.
 
-**Customer → GitHub → Bridge → Provider → Live application**
+**Customer → GitHub → Bridge → Render/Provider → Live application**
 
-The provider can change without requiring the customer to redesign the application.
+The provider layer remains abstracted so another provider can be added later without redesigning the customer-facing product.
+
+## Current commercial model
+
+Bridge plans are backed by real provider infrastructure rather than arbitrary resource packages.
+
+For the initial Render-backed model:
+
+- **Bridge Free** maps to Render Free where applicable.
+- Paid Bridge plans map to an underlying Render compute tier.
+- Render's infrastructure limitations remain the source of truth for the underlying service.
+- Bridge converts the provider cost from USD to NGN using a configurable exchange rate.
+- Bridge adds an explicit Bridge transaction/service fee.
+- The customer sees the Bridge plan and Bridge branding rather than needing to understand the provider dashboard.
+- No hidden infrastructure or service fees.
+- If the underlying provider service is genuinely free, Bridge can show **₦0**.
+- Each customer application uses its own provider service in the initial Option A architecture.
+- Higher provider tiers can become higher Bridge plans later.
+
+The exact public NGN prices, exchange-rate policy, and Bridge service-fee values still need final production configuration. They should remain configurable rather than hard-coded into the customer experience.
 
 ## Pricing principles
 
-Bridge pricing is designed to be fair and transparent rather than hiding infrastructure costs behind arbitrary packages.
-
 - No hidden fees.
-- If a service is genuinely free, show it as **₦0**.
-- A single-user application should have a legitimate affordable hosting path.
-- Infrastructure/resource costs and Bridge management/support fees should be clearly separated.
-- Resource limits should be visible before deployment.
-- Prefer hard limits and upgrade prompts over unexpected overage bills.
-- Managed support should be explicit and optional where practical.
-- Plans should be configurable rather than permanently hard-coded.
-- As an application's real resource requirements grow, its plan should be able to grow with it.
-
-The exact commercial prices are **not yet final**. Pricing will be calibrated against real provider costs, resource usage, support effort, and sustainable margins before public launch.
+- Show genuinely free services as **₦0**.
+- Keep provider infrastructure economics understandable.
+- Keep Bridge's service/transaction fee explicit.
+- A small or single-user application should have an affordable path.
+- Show plan/resource limits before deployment.
+- Prefer clear limits and upgrade prompts over surprise overage bills.
+- Let real usage drive upgrades.
+- Do not duplicate the provider's entire infrastructure-pricing system inside Bridge.
+- Keep the initial billing model simple enough to operate safely.
 
 ## Architecture
 
 Bridge is a modular monolith. Provider-specific infrastructure is isolated behind `src/lib/providers`.
 
-The first provider adapter is Render-compatible and requires credentials at runtime. A local simulation provider is included for development.
+The first provider adapter is Render-compatible. A local simulation provider is included for development.
 
 ## Stack
 
@@ -46,6 +62,7 @@ The first provider adapter is Render-compatible and requires credentials at runt
 - Secure cookie sessions
 - Provider abstraction
 - GitHub OAuth/webhooks
+- Paystack billing foundation
 
 ## Run locally
 
@@ -61,9 +78,16 @@ Never commit real credentials. See `docs/ARCHITECTURE.md` and `docs/SETUP.md`.
 
 # Development Roadmap
 
-Bridge is being developed in stages. **This roadmap is the source of truth for the current build sequence.** Update it whenever a meaningful development step is completed, deferred, or reprioritized.
+This roadmap is the **source of truth** for the Bridge build. Update it whenever a meaningful feature is completed, verified, deferred, or reprioritized.
 
-A future developer should be able to open this README and immediately understand what Bridge is, what has already been built, what is currently being fixed, and what remains before V1 launch.
+The roadmap separates:
+
+- what is implemented,
+- what is implemented but still needs real production verification,
+- what is required before V1,
+- and what intentionally belongs after V1.
+
+A future developer should be able to read this file first and immediately know the current state without reconstructing the project history.
 
 ## Phase 0 — Control Plane Foundation
 
@@ -83,36 +107,54 @@ A future developer should be able to open this README and immediately understand
 - [x] GitHub repository selection
 - [x] GitHub webhook registration
 - [x] Application creation flow
+- [x] Production Bridge deployment on Render
+- [x] Production PostgreSQL database
 
 ## Phase 1 — Reliable Deployment Engine
 
-**Status: 🟡 Verification / hardening**
+**Status: 🟠 Active — production verification blocked**
 
 Goal: make `GitHub → Bridge → Provider → LIVE` reliable instead of optimistic.
 
+### Implemented
+
 - [x] Store provider deployment IDs
+- [x] Create deployment records before provider deployment tracking
 - [x] Track asynchronous provider deployments
-- [x] Deployment reconciliation endpoint
-- [x] Automatic reconciliation worker
-- [x] Scheduled reconciliation every 5 minutes
-- [x] Preserve last known live version when a newer deployment fails
-- [x] Roll back to the previous successful commit
-- [x] Add real application health checks
-- [x] Make deployment success depend on health verification
-- [x] Prevent stale/older deployments from replacing newer commits
-- [x] Coalesce superseded deployments
-- [x] Add deployment timeout handling
-- [x] Add deployment retry policy
-- [x] Add deployment cancellation
-- [x] Improve deployment logs and customer-facing deployment states
-- [x] Make Render deploy requests tolerate successful empty/non-JSON responses
-- [ ] Complete an end-to-end production deployment verification
+- [x] Deployment reconciliation path
+- [x] Automatic reconciliation worker/scheduler foundation
+- [x] Preserve deployment history and previous successful deployment information
+- [x] Superseded/stale deployment handling foundation
+- [x] Deployment timeout handling foundation
+- [x] Deployment retry handling foundation
+- [x] Deployment cancellation foundation
+- [x] Customer-facing deployment states
+- [x] Customer-facing deployment logs
+- [x] Render deploy requests tolerate successful empty/non-JSON responses
+- [x] Initial Render deploy without a commit SHA does not send an unnecessary JSON body
+- [x] GitHub push deployments can pass the commit SHA to the provider
+
+### Still required
+
+- [ ] Fresh production deployment of the latest Bridge code
+- [ ] Confirm a real provider deployment moves beyond `QUEUED`
+- [ ] Confirm provider status is reconciled into Bridge correctly
+- [ ] Confirm successful deployment reaches `LIVE` only after health verification
+- [ ] Confirm failed deployment reaches `FAILED` with useful error information
+- [ ] Confirm newer deployments cannot be replaced by stale deployment results
+- [ ] Confirm automatic GitHub push → webhook → deployment in production
+- [ ] Confirm retry/cancellation behavior against a real provider deployment
+- [ ] Complete one clean end-to-end production deployment test
+
+**Current known issue:** the production application has been reaching `QUEUED` after Bridge successfully creates/tracks the provider deployment. The next investigation is the **deployment reconciliation/status path**, not another rewrite of the Render request parser unless new evidence requires it.
+
+Do not mark Phase 1 complete until the existing production test application has successfully completed the full deployment lifecycle.
 
 ## Phase 2 — Application Health & Availability
 
-**Status: 🟢 Completed**
+**Status: 🟡 Implemented — production verification pending**
 
-Goal: Bridge should know whether the customer's application is actually healthy.
+Goal: Bridge must know whether the customer's application is actually healthy.
 
 - [x] HTTP health checks
 - [x] Configurable health-check path
@@ -123,10 +165,12 @@ Goal: Bridge should know whether the customer's application is actually healthy.
 - [x] Recovery detection
 - [x] Customer notifications for outages/recovery
 - [x] Admin health dashboard
+- [ ] Verify health transition against a real deployed customer application
+- [ ] Verify outage → recovery lifecycle in production
 
 ## Phase 3 — Domains & HTTPS
 
-**Status: 🟡 In progress**
+**Status: 🟡 Implemented — production verification pending**
 
 Goal: turn a provider URL into a professional customer-owned application address.
 
@@ -139,42 +183,52 @@ Goal: turn a provider URL into a professional customer-owned application address
 - [x] Domain error handling
 - [x] Multiple domains per application
 - [x] Customer-facing domain management UI
+- [ ] Verify a real custom domain end-to-end in production
 - [ ] Optional Bridge-managed domain registration
 - [ ] Domain renewal/lifecycle support
 
 ## Phase 4 — Real Usage & Resource Control
 
-**Status: 🟡 In progress**
+**Status: 🟠 Active — provider capability verification pending**
 
-Goal: measure actual resource consumption and enforce fair plan limits.
+Goal: measure real usage and use provider-backed limits fairly without rebuilding the provider's entire metering system.
+
+### Implemented
 
 - [x] Provider metrics collection worker
 - [x] Usage collection scheduler command
 - [x] Render CPU monitoring
 - [x] Render RAM monitoring
 - [x] Render persistent-storage monitoring
-- [ ] Bandwidth monitoring
 - [x] Render request monitoring
 - [x] Plan-relative request usage percentage
 - [x] Plan-relative concurrent-user usage percentage
-- [ ] Concurrent-user monitoring where supported
-- [ ] Database usage monitoring
-- [ ] File-storage monitoring
 - [x] Usage history data capture
 - [x] Usage percentage against plan for supported metrics
 - [x] Soft usage warnings for supported plan metrics
 - [x] Hard usage protection for supported plan metrics
-- [ ] Resource overage policy
-- [x] Automatic suspension when a supported plan metric reaches 100%
+- [x] Automatic suspension when a supported plan metric reaches its configured protection threshold
 - [x] Usage dashboard
+
+### Still required
+
+- [ ] Confirm which bandwidth metric can be reliably obtained from the provider
+- [ ] Concurrent-user monitoring where provider data supports it
+- [ ] Database usage monitoring
+- [ ] File-storage monitoring
+- [ ] Verify all displayed resource percentages against real provider values
+- [ ] Finalize resource overage policy
+- [ ] Production test of warning/protection behavior
+
+Bridge should not invent provider metrics that cannot be measured reliably. Unsupported metrics should remain clearly marked rather than displaying misleading percentages.
 
 ## Phase 5 — Backups & Recovery
 
-**Status: 🟢 Completed**
+**Status: 🟢 Implemented — production verification pending**
 
 Goal: protect customer applications and make recovery practical.
 
-- [x] Existing backup data model
+- [x] Backup data model
 - [x] Provider backup capability boundary
 - [x] Render Postgres export backup capability
 - [x] Render backup export status lookup
@@ -182,47 +236,70 @@ Goal: protect customer applications and make recovery practical.
 - [x] Backup record listing/status tracking
 - [x] Automated backup scheduling
 - [x] Backup retention enforcement
-- [ ] Backup storage abstraction
 - [x] Backup integrity checks
 - [x] Safe Render PITR recovery initiation
 - [x] Recovery verification endpoint
 - [x] Recovery history
 - [x] Customer backup controls
+- [ ] Verify backup creation against the production database
+- [ ] Verify recovery verification against a real recovery operation
+- [ ] Backup storage abstraction
+- [ ] Production disaster-recovery drill
 
-Recovery history reuses the existing audit log rather than adding another persistence model. The customer-scoped history endpoint returns the latest 50 recovery lifecycle events for the application, including started, verified, not-ready, and failed attempts.
+Recovery history reuses the existing audit log rather than adding another persistence model. Customer-scoped history returns recent recovery lifecycle events.
 
-Customer backup controls expose the existing safe operations on the application page: create a backup, view recent backup status, start an isolated point-in-time recovery, and review recovery history. Production database cutover remains deliberately manual.
+Production database cutover remains deliberately manual until recovery has been proven safe.
 
 ## Phase 6 — Billing & Plans
 
-**Status: 🟡 In progress**
+**Status: 🟠 Active — pricing model being aligned to Render-backed plans**
 
-Goal: connect Bridge plans to real customer billing and resource economics.
+Goal: make Bridge billing simple, transparent, provider-backed, and sustainable.
+
+### Billing foundation implemented
 
 - [x] Billing transaction persistence
 - [x] Paystack payment initialization
 - [x] Paystack payment verification
 - [x] Signed Paystack webhook handling
 - [x] Paystack transaction identity/replay hardening
-- [ ] Production payment provider integration hardening
-- [x] Subscription lifecycle reconciliation
-- [x] Payment webhooks for recurring lifecycle events
+- [x] Subscription lifecycle reconciliation foundation
+- [x] Payment webhook lifecycle handling
 - [x] Failed/expired billing-period detection
-- [ ] Trial handling
 - [x] Monthly/yearly billing period activation
 - [x] Upgrade flow — plan selection + correctly priced checkout
-- [ ] Downgrade flow
-- [ ] Custom plans
-- [ ] Invoice/receipt history
-- [ ] Usage-to-plan enforcement
 - [x] Billing attention notification for expired periods
 - [x] Customer plan and billing status view
 
-The billing foundation persists payment references, initializes server-side Paystack checkout, verifies amount/currency/reference, and accepts signed `charge.success` webhooks. Webhook and verification fulfillment use Paystack transaction identity to prevent duplicate/concurrent payment fulfillment. Plans can optionally store a Paystack `plan_code`; when configured, Bridge includes it during checkout and stores the resulting Paystack subscription identity. Recurring subscription and invoice lifecycle events synchronize Bridge subscription status, while the protected billing reconciliation worker remains the fallback for expired periods. Customers can select another active plan and start a checkout using that plan's exact stored price; the subscription changes only after successful payment confirmation.
+### New V1 pricing direction
+
+- [ ] Replace the current arbitrary Bridge plan/resource assumptions with explicit Render-backed plan mappings
+- [ ] Add provider plan/tier identity to the plan configuration
+- [ ] Add configurable USD provider cost
+- [ ] Add configurable USD/NGN exchange rate
+- [ ] Add configurable Bridge transaction/service fee
+- [ ] Calculate displayed NGN price from provider cost + exchange rate + Bridge fee
+- [ ] Keep Free at ₦0 when the mapped provider tier is genuinely free
+- [ ] Clearly show Bridge plan name and included limits to customers
+- [ ] Keep provider limitations as the source of truth for the underlying service
+- [ ] Verify the paid-plan checkout amount matches the calculated Bridge price
+- [ ] Verify the price shown before checkout is the price sent to Paystack
+
+### Remaining billing features
+
+- [ ] Production payment provider integration hardening
+- [ ] Trial handling
+- [ ] Downgrade flow
+- [ ] Custom plans
+- [ ] Invoice/receipt history
+- [ ] Usage-to-plan enforcement across all supported metrics
+- [ ] Final production pricing configuration
+
+**Important:** do not build a large billing/commerce system. V1 needs a small reliable model: provider cost → exchange rate → Bridge fee → customer price → Paystack payment → subscription state.
 
 ## Phase 7 — Customer Experience
 
-**Status: 🟢 Completed**
+**Status: 🟢 Implemented — production verification pending**
 
 Goal: make infrastructure feel simple to a non-technical customer.
 
@@ -232,23 +309,26 @@ Goal: make infrastructure feel simple to a non-technical customer.
 - [x] Deployment history UI
 - [x] Deployment logs UI
 - [x] One-click redeploy
-- [x] One-click rollback
+- [x] One-click rollback foundation
 - [x] Domain management UI
 - [x] Usage dashboard
-- [x] Plan management — current plan/status view
-- [x] Plan management — plan selection + checkout
+- [x] Current plan/status view
+- [x] Plan selection + checkout
 - [x] Backup management
 - [x] Notifications center
 - [x] Customer support/contact flow
 - [x] Mobile-friendly experience
+- [ ] Verify the complete customer journey in production
+- [ ] Verify customer-visible states during a real deployment
+- [ ] Verify customer-visible billing and plan information after pricing update
 
-The customer experience adapts its navigation, cards, forms, action buttons, typography, and data tables for smaller screens. Wide tables remain horizontally scrollable instead of forcing a desktop layout onto mobile devices. The support page provides a configured support email and guidance for reporting application or deployment issues without introducing a ticketing system.
+The UI intentionally hides unnecessary infrastructure complexity. Customers should primarily understand their application, status, domain, plan, usage, billing, and available actions.
 
 ## Phase 8 — Admin & Operations
 
-**Status: 🟢 Completed**
+**Status: 🟢 Implemented — production verification pending**
 
-Goal: give Bridge operators the tools needed to operate many customers safely.
+Goal: give Bridge operators the minimum safe tools needed to operate multiple customers.
 
 - [x] Customer administration
 - [x] Application administration
@@ -263,37 +343,43 @@ Goal: give Bridge operators the tools needed to operate many customers safely.
 - [x] Customer support tools
 - [x] Manual intervention controls
 - [x] Operational alerts
+- [ ] Verify admin operations against production data
+- [ ] Verify manual intervention cannot bypass tenant authorization
 
-Operational alerts reuse the existing notification center and generate deduplicated customer/admin alerts for failed deployments, application outages, and critical supported usage limits, without introducing a separate alerting system.
+Operational alerts reuse the existing notification center and avoid introducing a separate alerting system for V1.
 
 ## Phase 9 — Security & Production Hardening
 
-**Status: 🟡 Next for V1**
+**Status: 🔴 Required before V1 launch**
 
 Goal: make Bridge safe to operate as a real hosting business.
 
-- [ ] Production secret enforcement
-- [ ] Separate GitHub token encryption key
-- [ ] Least-privilege GitHub permissions / GitHub App evaluation
+- [ ] Require `SESSION_SECRET` in production; remove the development fallback from production execution
+- [ ] Separate/encrypt GitHub token storage with a dedicated encryption key
+- [ ] Least-privilege GitHub permissions review
+- [ ] Evaluate GitHub App architecture for production scale
+- [ ] Webhook signature verification audit
 - [ ] Webhook replay protection
-- [ ] Rate limiting
+- [ ] Rate limiting on authentication, deployment, webhook, billing, and expensive API routes
 - [ ] Request validation hardening
 - [ ] Secure environment-variable handling
 - [ ] Tenant isolation review
-- [ ] Authorization audit
+- [ ] Authorization audit for customer/admin routes
 - [ ] Security event logging
-- [ ] Backup security review
 - [ ] Provider credential isolation
+- [ ] Backup security review
 - [ ] Production database migration workflow
-- [ ] Disaster recovery plan
+- [ ] Disaster recovery runbook
+- [ ] Production secret rotation procedure
+- [ ] Final dependency/security audit
 
 ## Phase 10 — Multi-Provider Infrastructure
 
-**Status: ⚪ Planned**
+**Status: ⚪ Post-V1**
 
-Goal: keep Bridge independent from any single infrastructure provider.
+Goal: add infrastructure choice only after the Render-backed product is reliable.
 
-- [ ] Harden provider interface
+- [ ] Harden provider interface based on real V1 lessons
 - [ ] Provider capability detection
 - [ ] Provider health monitoring
 - [ ] DigitalOcean adapter
@@ -303,11 +389,13 @@ Goal: keep Bridge independent from any single infrastructure provider.
 - [ ] Provider migration workflow
 - [ ] Customer migration without application redesign
 
+Do not start this phase while the primary Render deployment lifecycle is still being verified.
+
 ## Phase 11 — Advanced Bridge Services
 
 **Status: ⚪ Future**
 
-These come after the core hosting product is reliable.
+Only begin these after the core hosting product is reliable and commercially validated.
 
 - [ ] Managed databases
 - [ ] Managed file/object storage
@@ -326,67 +414,116 @@ These come after the core hosting product is reliable.
 
 # Current Build Order
 
-We do **not** jump randomly between features. The active work is driven by the V1 finish line and real test results.
+Work should follow this order. Do not jump to future infrastructure features while the current production loop is unresolved.
 
-1. **Redeploy Bridge with the Render response fix and retest the existing `bridge-hosting` application**
-2. **Complete launch-critical security hardening**
-3. **Finish the remaining domain/usage/billing controls required for V1**
-4. **Run a real end-to-end production smoke test**
-5. **Only then begin multi-provider work**
+### 1. Fix and verify the deployment lifecycle
 
-Future features should not be added simply because they are technically interesting. They should be added when they solve a real customer or operational problem.
+- Deploy the latest `main` to Bridge on Render.
+- Retest the existing `bridge-hosting` customer application.
+- Trace `QUEUED → BUILDING/DEPLOYING → LIVE/FAILED` through the reconciliation path.
+- Confirm Bridge reads the real provider deployment state.
+- Confirm health verification controls the final application state.
+- Confirm GitHub push triggers a new deployment.
 
-## Current status
+### 2. Finish Render-backed Bridge pricing
 
-**Bridge is in V1 integration and production-verification stage.**
+- Keep Render as the infrastructure source of truth.
+- Map Bridge plans to Render tiers.
+- Add configurable exchange rate and explicit Bridge fee.
+- Keep genuine provider Free at Bridge ₦0.
+- Verify Paystack receives the calculated customer price.
 
-The core control plane, GitHub connection, application creation, provider abstraction, local provider, Render adapter, customer experience, admin operations, health monitoring, backups/recovery foundation, and billing foundation are already implemented.
+### 3. Production smoke-test the core customer journey
 
-The production deployment investigation identified that the Render adapter must not assume a deployment-trigger response contains JSON. The provider API helper now reads the response body once, accepts an empty successful response, and reports malformed non-empty responses explicitly. The deployment trigger also omits a request body when no commit SHA is supplied, while still sending `commitId` for GitHub push deployments.
+**Customer → GitHub → Bridge → Render → deployment → health → live application → domain → usage → billing.**
 
-The fix is committed to `main` and now needs a fresh Render deployment and an end-to-end verification. Do not mark Phase 1 production-ready until that real verification succeeds.
+### 4. Complete launch-critical security hardening
 
-### Immediate next task
+Prioritize secrets, webhook security, rate limiting, tenant authorization, credential protection, validation, and recovery procedures.
 
-**Redeploy Bridge from the latest `main` commit, then retest the existing `bridge-hosting` application end-to-end.**
+### 5. Only after V1 reliability: expand
 
-Do not create unnecessary duplicate test applications while the existing production test is available.
-
-### After the deployment fix
-
-1. Confirm Bridge itself builds and runs on Render.
-2. Confirm Bridge can create a customer application through Render.
-3. Confirm the provider deployment is tracked correctly.
-4. Confirm health checks move the application to `LIVE` only when actually healthy.
-5. Confirm GitHub push → webhook → automatic deployment.
-6. Confirm domain/DNS/HTTPS flow.
-7. Confirm usage collection and plan protection.
-8. Confirm backup/recovery controls.
-9. Confirm billing/payment flow in the intended production configuration.
-10. Complete launch-critical security hardening.
+Then consider multi-provider support and advanced Bridge services.
 
 ---
 
-# Bridge V1 finish line
+# Current Status
 
-Bridge V1 does **not** require every future roadmap item. V1 is ready when the core loop works reliably in production:
+**Bridge is in V1 integration and production-verification stage.**
 
-**Customer → GitHub → Bridge → Provider → Live application → Domain/HTTPS → Billing → Usage/health monitoring → Alerts → Support.**
+The control-plane foundation is in place, including authentication, application management, provider abstraction, GitHub integration, Render integration, deployment records, health/usage foundations, backups/recovery, customer UI, admin operations, and billing foundations.
 
-The V1 finish line is about **reliability and safe operation**, not feature count.
+Bridge is already deployed on Render with a production PostgreSQL database.
 
-Before launch, the remaining work is a focused verification and hardening pass covering provider deployment reliability, secrets/credentials, webhook replay protection, rate limiting, validation, tenant authorization, secure environment handling, database migration/recovery procedures, production billing/provider configuration, and an end-to-end smoke test with a real application.
+The latest deployment investigation established that the Render deployment trigger must not assume a successful response contains JSON. That provider-side fix is now implemented. The production test has subsequently reached the point where Bridge records provider deployments as `QUEUED` instead of failing immediately on JSON parsing.
 
-Multi-provider infrastructure, advanced services, and other future roadmap items remain **post-V1**.
+That means the **next blocker is deployment reconciliation/status progression**. The priority is to determine why the tracked provider deployment is not being advanced to its real provider state and then to `LIVE`/`FAILED` after health verification.
 
-## Handoff rule
+Do not restart the architecture or add another provider until this lifecycle is proven.
+
+---
+
+# Immediate Next Task
+
+**Production deployment reconciliation verification.**
+
+1. Deploy the latest `main` commit to the Bridge Render service.
+2. Open the existing `bridge-hosting` application.
+3. Trigger/retry one deployment.
+4. Inspect the stored provider deployment ID.
+5. Confirm the reconciliation path polls that deployment.
+6. Confirm the Bridge deployment status changes from `QUEUED` to the real provider state.
+7. Confirm a healthy application becomes `LIVE`.
+8. Confirm a failed deployment becomes `FAILED` without destroying the last known good version.
+9. Confirm a GitHub push produces the same lifecycle automatically.
+10. Update this README immediately after the result.
+
+**Do not create unnecessary duplicate applications while the existing production test application is available.**
+
+---
+
+# V1 Finish Line
+
+Bridge V1 is ready when this core loop works reliably in production:
+
+**Customer → GitHub → Bridge → Render → Live application → Domain/HTTPS → Billing → Usage/health monitoring → Alerts → Support.**
+
+V1 does **not** require:
+
+- multiple infrastructure providers,
+- an advanced marketplace,
+- managed AI infrastructure,
+- complex enterprise organizations,
+- or a large custom billing engine.
+
+V1 is about **reliable managed hosting**, transparent pricing, safe operations, and a simple customer experience.
+
+Before launch, the remaining critical work is:
+
+1. reliable production deployment reconciliation;
+2. real health-verified application state;
+3. production domain/HTTPS verification;
+4. provider-backed usage verification;
+5. Render-backed Bridge pricing configuration;
+6. Paystack production billing verification;
+7. launch-critical security hardening;
+8. backup/recovery verification;
+9. one complete production smoke test.
+
+---
+
+# Handoff Rule
 
 If another developer takes over this repository:
 
 1. Read this README first.
-2. Check **Current status** and **Immediate next task** before changing code.
-3. Inspect the existing implementation before adding new architecture.
+2. Check **Current Status** and **Immediate Next Task** before changing code.
+3. Inspect the existing implementation before adding architecture.
 4. Keep provider-specific logic inside `src/lib/providers`.
-5. Update this roadmap after meaningful changes.
-6. Do not mark a feature completed until it has been tested at the appropriate environment level.
-7. Prefer the smallest change that moves Bridge toward the V1 finish line.
+5. Treat Render/provider capabilities as the source of truth for provider-backed resources.
+6. Do not recreate complex provider infrastructure unnecessarily.
+7. Keep Bridge pricing transparent: provider cost + exchange rate + explicit Bridge fee.
+8. Update this roadmap after every meaningful development step.
+9. Do not mark a feature complete until it is tested at the appropriate environment level.
+10. Prefer the smallest change that moves Bridge toward the V1 finish line.
+11. Do not begin Phase 10 or Phase 11 work while a launch-critical V1 blocker remains unresolved.
